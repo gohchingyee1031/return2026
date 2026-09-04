@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>重返2026：我的钱袋与市集</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-stone-950 text-stone-100 min-h-screen p-4 select-none font-sans pb-10">
+
+  <!-- 加入房间界面 -->
+  <div id="loginCard" class="max-w-md mx-auto my-12 bg-stone-900 border-2 border-amber-600/70 p-6 rounded-2xl shadow-xl space-y-4">
+    <div class="text-center space-y-1">
+      <div class="text-4xl mb-1">🏮</div>
+      <h1 class="text-xl font-black text-amber-400">加入东汉市集</h1>
+      <p class="text-xs text-stone-400">输入大屏幕上的房间号与你的昵称</p>
+    </div>
+    <div class="space-y-3 pt-2">
+      <div>
+        <label class="block text-[11px] text-stone-400 mb-1">房间码</label>
+        <input id="inRoomCode" type="text" value="2026" class="w-full bg-stone-950 border border-stone-700 rounded-xl p-3 text-amber-300 font-black tracking-widest text-center focus:outline-none" />
+      </div>
+      <div>
+        <label class="block text-[11px] text-stone-400 mb-1">你的昵称</label>
+        <input id="inPlayerName" type="text" placeholder="例如：玩家A" class="w-full bg-stone-950 border border-stone-700 rounded-xl p-3 text-white text-sm focus:outline-none" />
+      </div>
+      <button onclick="joinGame()" class="w-full bg-amber-600 hover:bg-amber-500 text-white font-bold py-3.5 rounded-xl transition shadow active:scale-95 text-sm">
+        进入游戏 ➔
+      </button>
+    </div>
+  </div>
+
+  <!-- 手机游戏主界面 -->
+  <div id="playInterface" class="hidden max-w-md mx-auto space-y-4">
+    
+    <!-- 个人顶栏资产 -->
+    <div class="bg-gradient-to-r from-stone-900 via-amber-950/40 to-stone-900 border border-amber-600/60 rounded-2xl p-4 flex justify-between items-center shadow-lg">
+      <div>
+        <span class="text-xs text-stone-400 block">当前玩家</span>
+        <span id="meName" class="text-lg font-black text-white"></span>
+      </div>
+      <div class="text-right">
+        <span class="text-xs text-stone-400 block">手中铜钱</span>
+        <div class="text-2xl font-black text-amber-400" id="meCoins">0 <span class="text-xs font-normal">文</span></div>
+      </div>
+    </div>
+
+    <!-- 上半区：我的随身货物 -->
+    <div class="bg-stone-900 p-4 rounded-2xl border border-stone-800 space-y-3">
+      <div class="flex justify-between items-center">
+        <h2 class="text-sm font-bold text-amber-400">🎒 我的库存货物</h2>
+        <span id="dayNotice" class="text-[11px] text-stone-400">第 1 天只进不出</span>
+      </div>
+      <div id="myInventoryList" class="space-y-2"></div>
+    </div>
+
+    <!-- 下半区：今日集市牌价与购买 -->
+    <div class="bg-stone-900 p-4 rounded-2xl border border-stone-800 space-y-3">
+      <h2 class="text-sm font-bold text-amber-400">🏪 今日全城牌价 (点击买入)</h2>
+      <div id="marketShopList" class="space-y-2"></div>
+    </div>
+
+  </div>
+
+  <script>
+    // ！！！保持与 index.html 完全一致的配置！！！
+    const SUPABASE_URL = "https://你的项目ID.supabase.co";
+    const SUPABASE_ANON_KEY = "你的ANON_KEY";
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    let roomChannel = null;
+    let myName = "";
+    let localState = {
+      currentDay: 1,
+      bannedItemId: null,
+      marketItems: [],
+      players: []
+    };
+
+    function joinGame() {
+      const room = document.getElementById('inRoomCode').value.trim();
+      const name = document.getElementById('inPlayerName').value.trim();
+
+      if (!room || !name) {
+        alert("请填写完整的房间码和昵称！");
+        return;
+      }
+
+      myName = name;
+      document.getElementById('loginCard').classList.add('hidden');
+      document.getElementById('playInterface').classList.remove('hidden');
+      document.getElementById('meName').innerText = myName;
+
+      // 订阅广播频道
+      roomChannel = supabase.channel(`room_${room}`, {
+        config: { broadcast: { self: false } }
+      });
+
+      roomChannel
+        .on('broadcast', { event: 'SYNC_STATE' }, ({ payload }) => {
+          localState = payload;
+          renderMobileUI();
+        })
+        .subscribe((status) => {
+          if (status === 'SUBSCRIBED') {
+            // 向大屏幕报到加入
+            roomChannel.send({
+              type: 'broadcast',
+              event: 'PLAYER_JOIN',
+              payload: { name: myName }
+            });
+          }
+        });
+    }
+
+    function reqBuy(itemId) {
+      if (!roomChannel) return;
+      roomChannel.send({
+        type: 'broadcast',
+        event: 'PLAYER_BUY',
+        payload: { playerName: myName, itemId: itemId }
+      });
+    }
+
+    function reqSell(itemId) {
+      if (!roomChannel) return;
+      roomChannel.send({
+        type: 'broadcast',
+        event: 'PLAYER_SELL',
+        payload: { playerName: myName, itemId: itemId }
+      });
+    }
+
+    function renderMobileUI() {
+      const me = localState.players.find(p => p.name === myName);
+      if (me) {
+        document.getElementById('meCoins').innerHTML = `${me.coins} <span class="text-xs font-normal">文</span>`;
+      }
+
+      const isDay1 = localState.currentDay === 1;
+      document.getElementById('dayNotice').innerText = isDay1 ? "第 1 天只进不出" : `第 ${localState.currentDay} 天`;
+
+      // 1. 渲染我的库存卡片
+      const invContainer = document.getElementById('myInventoryList');
+      invContainer.innerHTML = "";
+      if (!me || Object.values(me.inventory).every(q => q <= 0)) {
+        invContainer.innerHTML = `<div class="text-center py-4 text-xs text-stone-500">背包空空，快在下方买入货物吧！</div>`;
+      } else {
+        Object.entries(me.inventory).forEach(([itemId, qty]) => {
+          if (qty <= 0) return;
+          const item = localState.marketItems.find(i => i.id === itemId);
+          const isBanned = itemId === localState.bannedItemId;
+
+          const card = document.createElement('div');
+          card.className = "flex justify-between items-center p-3 rounded-xl bg-stone-950 border border-stone-800";
+          card.innerHTML = `
+            <div class="flex items-center gap-2">
+              <span class="text-xl">${item?.icon || '📦'}</span>
+              <div>
+                <div class="font-bold text-sm text-stone-200">${item?.name} <span class="text-xs text-amber-400 font-normal">x${qty}</span></div>
+                <div class="text-[11px] text-stone-400">今日单价: ${isBanned ? '官府禁售' : item?.price + '文'}</div>
+              </div>
+            </div>
+            <button onclick="reqSell('${itemId}')" ${isDay1 || isBanned ? 'disabled' : ''} class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition ${isDay1 || isBanned ? 'bg-stone-800 text-stone-600 cursor-not-allowed' : 'bg-rose-900/80 hover:bg-rose-800 text-rose-200 active:scale-95'}">
+              ${isDay1 ? '今日禁卖' : (isBanned ? '已查封' : '卖出 ➔')}
+            </button>
+          `;
+          invContainer.appendChild(card);
+        });
+      }
+
+      // 2. 渲染集市价格列表
+      const shopContainer = document.getElementById('marketShopList');
+      shopContainer.innerHTML = "";
+      localState.marketItems.forEach(item => {
+        const isBanned = item.id === localState.bannedItemId;
+        const canAfford = me && me.coins >= item.price;
+
+        const row = document.createElement('div');
+        row.className = `flex justify-between items-center p-2.5 rounded-xl bg-stone-950 border ${isBanned ? 'border-rose-950 opacity-60' : 'border-stone-800'}`;
+        row.innerHTML = `
+          <div class="flex items-center gap-2">
+            <span class="text-lg">${item.icon}</span>
+            <div>
+              <span class="text-sm font-bold ${isBanned ? 'line-through text-stone-500' : 'text-stone-200'}">${item.name}</span>
+              <span class="text-xs font-black ml-2 ${isBanned ? 'text-rose-400' : 'text-amber-400'}">${isBanned ? '查封' : item.price + '文'}</span>
+            </div>
+          </div>
+          <button onclick="reqBuy('${item.id}')" ${isBanned || !canAfford ? 'disabled' : ''} class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition ${isBanned ? 'bg-stone-800 text-stone-600' : (!canAfford ? 'bg-stone-800 text-stone-500' : 'bg-emerald-700 hover:bg-emerald-600 text-white active:scale-95')}">
+            ${isBanned ? '禁买' : (!canAfford ? '钱不足' : '买入 +1')}
+          </button>
+        `;
+        shopContainer.appendChild(row);
+      });
+    }
+  </script>
+</body>
+</html>
