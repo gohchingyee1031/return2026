@@ -3,14 +3,19 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>重返2026：我的钱袋与市集</title>
+  <title>重返2026：我的手机端</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    .interactive-card { transition: all 0.2s ease; }
+    .interactive-card:active { transform: scale(0.97); }
+  </style>
 </head>
 <body class="bg-stone-950 text-stone-100 min-h-screen p-4 select-none font-sans pb-10">
 
-  <!-- 加入房间界面 -->
-  <div id="loginCard" class="max-w-md mx-auto my-12 bg-stone-900 border-2 border-amber-600/70 p-6 rounded-2xl shadow-xl space-y-4">
+  <!-- ================= 阶段 0：登录界面 ================= -->
+  <div id="viewLogin" class="max-w-md mx-auto my-12 bg-stone-900 border-2 border-amber-600/70 p-6 rounded-2xl shadow-xl space-y-4">
     <div class="text-center space-y-1">
       <div class="text-4xl mb-1">🏮</div>
       <h1 class="text-xl font-black text-amber-400">加入东汉市集</h1>
@@ -26,23 +31,127 @@
         <input id="inPlayerName" type="text" placeholder="例如：玩家A" class="w-full bg-stone-950 border border-stone-700 rounded-xl p-3 text-white text-sm focus:outline-none" />
       </div>
       <button onclick="joinGame()" class="w-full bg-amber-600 hover:bg-amber-500 text-white font-bold py-3.5 rounded-xl transition shadow active:scale-95 text-sm">
-        进入游戏 ➔
+        进入游戏大厅 ➔
       </button>
       <div id="joinStatus" class="text-center text-[11px] text-stone-400 mt-2"></div>
     </div>
   </div>
 
-  <!-- 手机游戏主界面 -->
-  <div id="playInterface" class="hidden max-w-md mx-auto space-y-4">
+  <!-- ================= 阶段 1：等待大厅状态 ================= -->
+  <div id="viewWaitingLobby" class="hidden max-w-md mx-auto my-12 bg-stone-900 border border-stone-800 p-6 rounded-2xl text-center space-y-4">
+    <div class="text-4xl animate-bounce">⏳</div>
+    <h2 class="text-lg font-black text-amber-400">已连线进入大厅！</h2>
+    <div class="text-xs text-stone-300 space-y-1">
+      <p>你的身份：<b id="lobbyMeName" class="text-white text-sm"></b></p>
+      <p class="text-stone-400">请抬头看大屏幕，等待主持人点击【开启穿越之旅】！</p>
+    </div>
+    <div class="p-3 bg-stone-950 rounded-xl border border-stone-800 text-[11px] text-stone-500">
+      游戏即将开始，请准备好亲自摸取时空钱袋...
+    </div>
+  </div>
+
+  <!-- ================= 阶段 2：摸取钱袋 ================= -->
+  <div id="viewBagPick" class="hidden max-w-md mx-auto space-y-4 my-6">
+    <div class="text-center space-y-1">
+      <h2 class="text-lg font-black text-amber-400">【抽取时空钱袋】</h2>
+      <p id="bagStatusTip" class="text-xs text-stone-400">地上散落着5个时空风暴卷来的钱袋</p>
+    </div>
+
+    <div id="mobileBagGrid" class="grid grid-cols-2 gap-3"></div>
+  </div>
+
+  <!-- ================= 阶段 3：服饰抉择 ================= -->
+  <div id="viewDressPick" class="hidden max-w-md mx-auto space-y-4 my-6">
+    <div class="text-center space-y-1">
+      <h2 class="text-lg font-black text-amber-400">【伪装换装 · 入乡随俗】</h2>
+      <p id="dressStatusTip" class="text-xs text-stone-400">官差走过来了，请做出你的衣着抉择！</p>
+    </div>
+
+    <div id="mobileDressOptions" class="space-y-3">
+      <button onclick="chooseDress('beggar')" class="w-full interactive-card bg-stone-900 hover:bg-stone-800 border-2 border-stone-800 hover:border-amber-500 p-4 rounded-xl flex items-center gap-3 text-left">
+        <span class="text-3xl">🥣</span>
+        <div>
+          <div class="font-black text-amber-300 text-base">乞丐装</div>
+          <div class="text-[11px] text-stone-400">破烂粗布衣物</div>
+        </div>
+      </button>
+
+      <button onclick="chooseDress('normal')" class="w-full interactive-card bg-stone-900 hover:bg-stone-800 border-2 border-stone-800 hover:border-amber-500 p-4 rounded-xl flex items-center gap-3 text-left">
+        <span class="text-3xl">👘</span>
+        <div>
+          <div class="font-black text-amber-300 text-base">日常服饰</div>
+          <div class="text-[11px] text-stone-400">普通百姓麻服</div>
+        </div>
+      </button>
+
+      <button onclick="chooseDress('none')" class="w-full interactive-card bg-stone-900 hover:bg-stone-800 border-2 border-stone-800 hover:border-amber-500 p-4 rounded-xl flex items-center gap-3 text-left">
+        <span class="text-3xl">👕</span>
+        <div>
+          <div class="font-black text-amber-300 text-base">不买</div>
+          <div class="text-[11px] text-stone-400">维持现代着装</div>
+        </div>
+      </button>
+    </div>
+
+    <div id="dressWaitingNotice" class="hidden p-6 bg-stone-900 rounded-xl border border-stone-800 text-center space-y-2">
+      <div class="text-emerald-400 font-bold text-sm">✓ 你已完成暗自抉择！</div>
+      <p class="text-xs text-stone-400">等待全员在手机上选好后，大屏幕将统一揭晓命运...</p>
+    </div>
+  </div>
+
+  <!-- ================= 阶段 3.5 & 4：换装结果 & 目标公布过渡 ================= -->
+  <div id="viewStoryTransition" class="hidden max-w-md mx-auto my-12 bg-stone-900 border border-stone-800 p-6 rounded-2xl text-center space-y-3">
+    <div class="text-3xl">📜</div>
+    <h2 id="transitionTitle" class="text-lg font-black text-amber-400"></h2>
+    <p id="transitionDesc" class="text-xs text-stone-300 leading-relaxed"></p>
+    <div class="text-[11px] text-amber-300 font-bold mt-2">请观看前方大屏幕主持人念白...</div>
+  </div>
+
+  <!-- ================= 清晨环节：乞丐掷骰 ================= -->
+  <div id="viewMorningBeggar" class="hidden max-w-md mx-auto my-10 bg-stone-900 border-2 border-amber-600/70 p-6 rounded-2xl text-center space-y-4">
+    <div class="text-4xl">🎲</div>
+    <h2 class="text-lg font-black text-amber-400">清晨破晓 · 乞丐施舍</h2>
+    <p class="text-xs text-stone-300">你穿着乞丐装，街头有早市好心百姓路过施舍，快掷骰子获取今日盘缠！</p>
+    <button id="btnMobileRollDice" onclick="rollBeggarDice()" class="w-full bg-amber-600 hover:bg-amber-500 text-white font-black py-3.5 rounded-xl shadow active:scale-95 transition text-sm">
+      🎲 点击掷色子 (获得 1-6 铜板)
+    </button>
+    <div id="diceResultBox" class="hidden p-3 bg-stone-950 rounded-xl border border-emerald-700 text-emerald-400 font-black text-sm"></div>
+  </div>
+
+  <!-- ================= 清晨环节：全员突发大事件 ================= -->
+  <div id="viewMorningEvent" class="hidden max-w-md mx-auto space-y-4 my-6">
+    <div class="p-5 bg-stone-900 border-2 border-amber-600/70 rounded-2xl space-y-3">
+      <div class="flex items-center gap-2">
+        <span class="text-2xl">⚡</span>
+        <h2 id="mEventTitle" class="text-base font-black text-amber-300"></h2>
+      </div>
+      <p id="mEventDesc" class="text-xs text-stone-300 leading-relaxed"></p>
+
+      <div id="mEventOptions" class="space-y-2 pt-2">
+        <button onclick="submitEventChoice('A')" class="w-full text-left bg-stone-950 hover:bg-stone-800 p-3 rounded-xl border border-stone-700 active:scale-95 transition">
+          <span class="font-bold text-amber-400 text-xs">选项 A：</span>
+          <span id="mEventOptA" class="text-xs text-stone-200"></span>
+        </button>
+        <button onclick="submitEventChoice('B')" class="w-full text-left bg-stone-950 hover:bg-stone-800 p-3 rounded-xl border border-stone-700 active:scale-95 transition">
+          <span class="font-bold text-amber-400 text-xs">选项 B：</span>
+          <span id="mEventOptB" class="text-xs text-stone-200"></span>
+        </button>
+      </div>
+
+      <div id="mEventWaitOther" class="hidden p-4 bg-stone-950 rounded-xl text-center text-xs text-stone-400">
+        正在等待轮到你做出抉择...
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= 阶段 5：正式主交易界面 (PLAYING) ================= -->
+  <div id="viewPlaying" class="hidden max-w-md mx-auto space-y-4">
     
     <!-- 个人顶栏资产 -->
     <div class="bg-gradient-to-r from-stone-900 via-amber-950/40 to-stone-900 border border-amber-600/60 rounded-2xl p-4 flex justify-between items-center shadow-lg">
       <div>
         <span class="text-xs text-stone-400 block">当前玩家</span>
-        <div class="flex items-center gap-2">
-          <span id="meName" class="text-lg font-black text-white"></span>
-          <span id="meTurnBadge" class="text-[10px] px-2 py-0.5 rounded-full font-bold"></span>
-        </div>
+        <span id="meName" class="text-lg font-black text-white"></span>
       </div>
       <div class="text-right">
         <span class="text-xs text-stone-400 block">手中铜钱</span>
@@ -50,7 +159,7 @@
       </div>
     </div>
 
-    <!-- 上半区：我的随身货物 -->
+    <!-- 我的随身货物 -->
     <div class="bg-stone-900 p-4 rounded-2xl border border-stone-800 space-y-3">
       <div class="flex justify-between items-center">
         <h2 class="text-sm font-bold text-amber-400">🎒 我的库存货物</h2>
@@ -59,7 +168,7 @@
       <div id="myInventoryList" class="space-y-2"></div>
     </div>
 
-    <!-- 下半区：今日集市牌价 -->
+    <!-- 今日集市牌价 -->
     <div class="bg-stone-900 p-4 rounded-2xl border border-stone-800 space-y-3">
       <h2 class="text-sm font-bold text-amber-400">🏪 今日全城牌价 (实时变动)</h2>
       <div id="marketShopList" class="space-y-2"></div>
@@ -74,10 +183,15 @@
     let supabaseClient = null;
     let roomChannel = null;
     let myName = "";
+    let myBagPicked = false;
+    let myDressChosen = false;
     let localState = {
+      gameState: "LOBBY",
       currentDay: 1,
       bannedItemId: null,
       activePlayerName: "",
+      bagList: [],
+      todaySharedEvent: null,
       marketItems: [],
       players: []
     };
@@ -105,14 +219,15 @@
         roomChannel
           .on('broadcast', { event: 'SYNC_STATE' }, ({ payload }) => {
             localState = payload;
-            renderMobileUI();
+            routeMobileView();
           })
           .subscribe((status) => {
             if (status === 'SUBSCRIBED') {
-              document.getElementById('loginCard').classList.add('hidden');
-              document.getElementById('playInterface').classList.remove('hidden');
-              document.getElementById('meName').innerText = myName;
+              document.getElementById('viewLogin').classList.add('hidden');
+              document.getElementById('viewWaitingLobby').classList.remove('hidden');
+              document.getElementById('lobbyMeName').innerText = myName;
 
+              // 向大屏幕发入场信号
               roomChannel.send({
                 type: 'broadcast',
                 event: 'PLAYER_JOIN',
@@ -127,38 +242,177 @@
       }
     }
 
-    function reqBuy(itemId) {
-      if (!roomChannel) return;
+    // 状态路由分发器
+    function routeMobileView() {
+      const state = localState.gameState;
+      const me = localState.players.find(p => p.name === myName);
+
+      // 先隐藏所有阶段面板
+      document.getElementById('viewWaitingLobby').classList.add('hidden');
+      document.getElementById('viewBagPick').classList.add('hidden');
+      document.getElementById('viewDressPick').classList.add('hidden');
+      document.getElementById('viewStoryTransition').classList.add('hidden');
+      document.getElementById('viewMorningBeggar').classList.add('hidden');
+      document.getElementById('viewMorningEvent').classList.add('hidden');
+      document.getElementById('viewPlaying').classList.add('hidden');
+
+      if (state === "LOBBY") {
+        document.getElementById('viewWaitingLobby').classList.remove('hidden');
+      } else if (state === "BAG_DRAW") {
+        document.getElementById('viewBagPick').classList.remove('hidden');
+        renderMobileBags();
+      } else if (state === "DRESS_CHOICE") {
+        document.getElementById('viewDressPick').classList.remove('hidden');
+        renderMobileDress();
+      } else if (state === "DRESS_REVEAL") {
+        document.getElementById('viewStoryTransition').classList.remove('hidden');
+        document.getElementById('transitionTitle').innerText = "【换装抉择公布中】";
+        document.getElementById('transitionDesc').innerText = `你当前剩余资金：${me?.coins || 0} 铜钱。请抬头观看大屏幕各自奇遇！`;
+      } else if (state === "GOAL_INTRO") {
+        document.getElementById('viewStoryTransition').classList.remove('hidden');
+        document.getElementById('transitionTitle').innerText = "【核心任务：重返2026】";
+        document.getElementById('transitionDesc').innerText = "实价 300 铜板的发簪就在眼前！谁先赚够谁回现代！";
+      } else if (state === "MORNING_BEGGAR") {
+        if (me && me.role === "beggar") {
+          document.getElementById('viewMorningBeggar').classList.remove('hidden');
+        } else {
+          document.getElementById('viewStoryTransition').classList.remove('hidden');
+          document.getElementById('transitionTitle').innerText = "【破晓时刻】";
+          document.getElementById('transitionDesc').innerText = "乞丐装玩家正在接受好心人施舍，稍候进入突发大事件...";
+        }
+      } else if (state === "MORNING_EVENT") {
+        document.getElementById('viewMorningEvent').classList.remove('hidden');
+        renderMobileEvent();
+      } else if (state === "PLAYING" || state === "MORNING_NEWS") {
+        document.getElementById('viewPlaying').classList.remove('hidden');
+        renderMobileTradingUI();
+      }
+    }
+
+    // 摸钱袋渲染
+    function renderMobileBags() {
+      const isMyTurn = localState.activePlayerName === myName;
+      const tip = document.getElementById('bagStatusTip');
+      tip.innerHTML = isMyTurn ? `<b class="text-emerald-400 animate-pulse">👉 轮到你了！请亲自点击下方一个钱袋摸取！</b>` : `等待【${localState.activePlayerName}】摸取中...`;
+
+      const grid = document.getElementById('mobileBagGrid');
+      grid.innerHTML = (localState.bagList || []).map((bag, idx) => {
+        if (bag.owner) {
+          const isMine = bag.owner === myName;
+          return `
+            <div class="p-4 rounded-xl bg-stone-950 border border-stone-800 text-center opacity-50">
+              <div class="text-3xl mb-1">👝</div>
+              <div class="text-xs text-stone-500">${isMine ? '你已获得' : bag.owner}</div>
+              <div class="text-xs font-bold text-amber-400">${bag.coins}文</div>
+            </div>
+          `;
+        }
+        return `
+          <button onclick="pickBagOnPhone(${idx})" ${isMyTurn ? '' : 'disabled'} class="interactive-card p-5 rounded-xl border-2 text-center ${isMyTurn ? 'bg-stone-900 border-amber-500 hover:bg-stone-800 shadow-lg' : 'bg-stone-950 border-stone-800 opacity-40 cursor-not-allowed'}">
+            <div class="text-4xl mb-1">💰</div>
+            <div class="font-black text-amber-300 text-sm">钱袋 ${idx + 1}</div>
+            <div class="text-[10px] text-stone-400 mt-1">${isMyTurn ? '点击翻开' : '等待轮到'}</div>
+          </button>
+        `;
+      }).join('');
+    }
+
+    function pickBagOnPhone(idx) {
+      if (localState.activePlayerName !== myName) return;
       roomChannel.send({
         type: 'broadcast',
-        event: 'PLAYER_BUY',
-        payload: { playerName: myName, itemId: itemId }
+        event: 'PLAYER_PICK_BAG',
+        payload: { playerName: myName, bagIdx: idx }
       });
     }
 
-    function reqSell(itemId) {
-      if (!roomChannel) return;
-      roomChannel.send({
-        type: 'broadcast',
-        event: 'PLAYER_SELL',
-        payload: { playerName: myName, itemId: itemId }
-      });
+    // 服饰抉择渲染
+    function renderMobileDress() {
+      const isMyTurn = localState.activePlayerName === myName;
+      const me = localState.players.find(p => p.name === myName);
+
+      const tip = document.getElementById('dressStatusTip');
+      const optionsBox = document.getElementById('mobileDressOptions');
+      const waitNotice = document.getElementById('dressWaitingNotice');
+
+      if (me && me.role) {
+        optionsBox.classList.add('hidden');
+        waitNotice.classList.remove('hidden');
+        tip.innerText = "你已暗自选好！";
+      } else if (isMyTurn) {
+        optionsBox.classList.remove('hidden');
+        waitNotice.classList.add('hidden');
+        tip.innerHTML = `<b class="text-emerald-400 animate-pulse">👉 轮到你做决定了！请点击一个：</b>`;
+      } else {
+        optionsBox.classList.add('hidden');
+        waitNotice.classList.remove('hidden');
+        tip.innerText = `等待【${localState.activePlayerName}】做决定...`;
+      }
     }
 
-    function renderMobileUI() {
+    function chooseDress(key) {
+      roomChannel.send({
+        type: 'broadcast',
+        event: 'PLAYER_PICK_DRESS',
+        payload: { playerName: myName, dressKey: key }
+      });
+      document.getElementById('mobileDressOptions').classList.add('hidden');
+      document.getElementById('dressWaitingNotice').classList.remove('hidden');
+    }
+
+    // 乞丐掷骰
+    function rollBeggarDice() {
+      roomChannel.send({
+        type: 'broadcast',
+        event: 'PLAYER_ROLL_DICE',
+        payload: { playerName: myName }
+      });
+      document.getElementById('btnMobileRollDice').classList.add('hidden');
+      document.getElementById('diceResultBox').innerText = "已向大屏幕投掷完成！施舍铜板已入账！";
+      document.getElementById('diceResultBox').classList.remove('hidden');
+    }
+
+    // 突发事件
+    function renderMobileEvent() {
+      const isMyTurn = localState.activePlayerName === myName;
+      const ev = localState.todaySharedEvent;
+      if (!ev) return;
+
+      document.getElementById('mEventTitle').innerText = ev.title;
+      document.getElementById('mEventDesc').innerText = ev.desc;
+      document.getElementById('mEventOptA').innerText = ev.optA;
+      document.getElementById('mEventOptB').innerText = ev.optB;
+
+      const optsBox = document.getElementById('mEventOptions');
+      const waitBox = document.getElementById('mEventWaitOther');
+
+      if (isMyTurn) {
+        optsBox.classList.remove('hidden');
+        waitBox.classList.add('hidden');
+      } else {
+        optsBox.classList.add('hidden');
+        waitBox.classList.remove('hidden');
+        waitBox.innerText = `正在等待【${localState.activePlayerName}】做出选择...`;
+      }
+    }
+
+    function submitEventChoice(choice) {
+      roomChannel.send({
+        type: 'broadcast',
+        event: 'PLAYER_EVENT_CHOICE',
+        payload: { playerName: myName, choice: choice }
+      });
+      document.getElementById('mEventOptions').classList.add('hidden');
+      document.getElementById('mEventWaitOther').classList.remove('hidden');
+      document.getElementById('mEventWaitOther').innerText = "✓ 你的抉择已提交，请看大屏幕结果！";
+    }
+
+    // 交易买卖
+    function renderMobileTradingUI() {
       const me = localState.players.find(p => p.name === myName);
       if (me) {
+        document.getElementById('meName').innerText = me.name;
         document.getElementById('meCoins').innerHTML = `${me.coins} <span class="text-xs font-normal">文</span>`;
-      }
-
-      const isMyTurn = localState.activePlayerName === myName;
-      const turnBadge = document.getElementById('meTurnBadge');
-      if (isMyTurn) {
-        turnBadge.innerText = "🟢 轮到你操作";
-        turnBadge.className = "text-[10px] px-2 py-0.5 rounded-full font-bold bg-emerald-950 text-emerald-300 border border-emerald-700 animate-pulse";
-      } else {
-        turnBadge.innerText = `⏳ 等待 ${localState.activePlayerName || '大屏'} 行动`;
-        turnBadge.className = "text-[10px] px-2 py-0.5 rounded-full font-bold bg-stone-800 text-stone-400 border border-stone-700";
       }
 
       const isDay1 = localState.currentDay === 1;
@@ -216,6 +470,22 @@
           </button>
         `;
         shopContainer.appendChild(row);
+      });
+    }
+
+    function reqBuy(itemId) {
+      roomChannel.send({
+        type: 'broadcast',
+        event: 'PLAYER_BUY',
+        payload: { playerName: myName, itemId: itemId }
+      });
+    }
+
+    function reqSell(itemId) {
+      roomChannel.send({
+        type: 'broadcast',
+        event: 'PLAYER_SELL',
+        payload: { playerName: myName, itemId: itemId }
       });
     }
   </script>
