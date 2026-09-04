@@ -118,9 +118,8 @@
           <p class="text-rose-400 font-black text-base">掌柜高呼：“实价 300 铜板，少一文都不卖！”</p>
           <div class="p-3 bg-stone-900 rounded-lg border border-amber-900/50 text-xs space-y-1.5 text-stone-300">
             <p><b class="text-amber-400">★ 获胜机制：</b> 各自为战，谁先赚够 <strong class="text-amber-300">300 铜板</strong> 买回发簪谁就回到2026！</p>
-            <p><b class="text-emerald-400">★ 卖艺救急：</b> 若手头缺钱，可选择【街头卖艺】赚取 4~7 铜钱，但当天疲惫无法再买卖货物！</p>
-            <p><b class="text-rose-400">★ 破产机制：</b> 铜板为 0 且无物资、无法翻盘时淘汰；若无现金可半价折现手上货物救急。</p>
-            <p><b class="text-amber-300">★ 轮流游玩：</b> <strong>第一天仅能买入进货或卖艺积攒底金</strong>，第二天起全线自由买卖、乞丐掷色子与大盘物价暴涨暴跌！</p>
+            <p><b class="text-rose-400 font-bold">★ 破产出局：</b> 若手中铜钱归 0 且没有任何货物抵押变现，直接判定破产，时空锚点断裂，永久淘汰！</p>
+            <p><b class="text-amber-300">★ 轮流游玩：</b> <strong>第一天仅能买入进货</strong>，第二天起全线自由买卖、乞丐掷色子与大盘物价暴涨暴跌！</p>
           </div>
         </div>
         <button id="btnEnterDay1" type="button" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-black py-4 rounded-xl shadow-xl transition text-base">
@@ -140,7 +139,7 @@
         </button>
       </div>
 
-      <!-- 清晨阶段 B：全员面对同一个突发事件，轮流独立做选择 -->
+      <!-- 清晨阶段 B：全员面对同一个突发事件 -->
       <div id="secMorningSharedEvent" class="space-y-5 hidden">
         <div class="flex justify-between items-center">
           <h2 class="text-xl font-black text-amber-400">【清晨第二幕：今日全员突发奇遇】</h2>
@@ -173,7 +172,7 @@
         </button>
       </div>
 
-      <!-- 清晨阶段 C：今日天下大势（2个暴涨暴跌事件 + 1个下架） -->
+      <!-- 清晨阶段 C：今日天下大势 -->
       <div id="secMorningMarketNews" class="space-y-5 hidden">
         <h2 class="text-2xl font-black text-amber-400">【清晨第三幕：今日东汉时局与市集暴动】</h2>
         <div class="bg-stone-950 p-4 rounded-xl border border-stone-800 text-xs text-stone-300 leading-relaxed">
@@ -185,6 +184,18 @@
         </button>
       </div>
 
+    </div>
+  </div>
+
+  <!-- ================= 破产宣布专用大弹窗 ================= -->
+  <div id="bankruptcyModal" class="hidden fixed inset-0 bg-red-950/90 z-50 flex items-center justify-center p-4">
+    <div class="bg-stone-900 border-2 border-rose-600 max-w-md w-full p-6 rounded-2xl shadow-2xl text-center space-y-4">
+      <div class="text-5xl">💥</div>
+      <h2 class="text-2xl font-black text-rose-500">时空湮灭 · 正式破产！</h2>
+      <div id="bankruptcyModalContent" class="text-sm text-stone-200 leading-relaxed bg-stone-950 p-4 rounded-xl border border-stone-800"></div>
+      <button onclick="closeBankruptcyModal()" type="button" class="w-full bg-rose-700 hover:bg-rose-600 text-white font-bold py-3 rounded-xl transition shadow">
+        确认出局，跳过该玩家
+      </button>
     </div>
   </div>
 
@@ -229,28 +240,10 @@
           <div class="text-3xl font-black text-amber-400" id="activePlayerCoins">0 <span class="text-xs">文</span></div>
         </div>
 
-        <!-- 动态流转按钮：非最后一人时显示【传给下一人】，最后一人时直接替换为【结束今天·进入下一天】 -->
         <button id="btnTurnAction" onclick="handleTurnActionButton()" type="button" class="bg-amber-600 hover:bg-amber-500 text-white font-black px-5 py-3 rounded-xl shadow-md active:scale-95 transition text-sm">
           完成行动 · 传给下一人 ➔
         </button>
       </div>
-    </div>
-
-    <!-- 街头卖艺救急区 -->
-    <div id="buskingBox" class="p-3.5 bg-gradient-to-r from-emerald-950/40 via-stone-900 to-emerald-950/40 border border-emerald-700/60 rounded-2xl flex flex-col sm:flex-row justify-between items-center gap-3">
-      <div class="space-y-0.5 text-center sm:text-left">
-        <div class="flex items-center justify-center sm:justify-start gap-2">
-          <span class="text-lg">🎪</span>
-          <span class="text-sm font-black text-emerald-400">街头卖艺（打一套军体拳 / 秀一段现代舞）</span>
-        </div>
-        <p class="text-xs text-stone-400">
-          现金不够或想稳妥攒钱？当街表演才艺可获 <strong class="text-amber-300">4 ~ 7 铜板</strong> 打赏！<br class="hidden sm:inline" />
-          <span class="text-rose-400 font-semibold">【代价】：卖艺后消耗全部体力，今日不可再买卖任何货物！</span>
-        </p>
-      </div>
-      <button id="btnPerformBusking" onclick="doBusking()" type="button" class="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-500 text-white font-black px-5 py-2.5 rounded-xl shadow active:scale-95 transition text-xs whitespace-nowrap">
-        🥁 立即当街卖艺
-      </button>
     </div>
 
     <!-- 上半区：我的背包货物（直观卡牌，点击卖出） -->
@@ -289,7 +282,6 @@
 
   <script>
     // ================= 音效与古典雅乐生成系统 (Web Audio API) =================
-    // 无需外链MP3，在iPad本地即可直接生成真实的古风五音琴韵与铜钱叮当撞击声！
     let audioCtx = null;
     let isBgmPlaying = false;
     let bgmTimer = null;
@@ -305,22 +297,17 @@
       return audioCtx;
     }
 
-    // 播放清脆真实的铜钱碰撞/交易音效
     function playCoinSound() {
       try {
         const ctx = getAudioContext();
         const now = ctx.currentTime;
-        
-        // 两个高频泛音模拟金属撞击
         [2400, 3200, 4800].forEach((freq, i) => {
           const osc = ctx.createOscillator();
           const gain = ctx.createGain();
           osc.type = "sine";
           osc.frequency.setValueAtTime(freq + (Math.random() * 200 - 100), now + i * 0.04);
-          
           gain.gain.setValueAtTime(0.2, now + i * 0.04);
           gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.04 + 0.25);
-
           osc.connect(gain);
           gain.connect(ctx.destination);
           osc.start(now + i * 0.04);
@@ -329,7 +316,24 @@
       } catch (e) {}
     }
 
-    // 古风悠扬五声音阶 (宫商角徵羽 D4, E4, F#4, A4, B4, D5, E5, F#5, A5)
+    function playEliminationSound() {
+      try {
+        const ctx = getAudioContext();
+        const now = ctx.currentTime;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = "sawtooth";
+        osc.frequency.setValueAtTime(220, now);
+        osc.frequency.exponentialRampToValueAtTime(55, now + 0.8);
+        gain.gain.setValueAtTime(0.3, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.8);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.8);
+      } catch (e) {}
+    }
+
     const pentatonicNotes = [293.66, 329.63, 369.99, 440.00, 493.88, 587.33, 659.25, 739.99, 880.00];
 
     function playGuzhengPluck(freq, time) {
@@ -338,18 +342,13 @@
         const ctx = getAudioContext();
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
-
         osc.type = "triangle";
         osc.frequency.setValueAtTime(freq, time);
-
-        // 古筝拨弦 ADSR
         gain.gain.setValueAtTime(0, time);
         gain.gain.linearRampToValueAtTime(0.12, time + 0.02);
         gain.gain.exponentialRampToValueAtTime(0.001, time + 1.6);
-
         osc.connect(gain);
         gain.connect(ctx.destination);
-
         osc.start(time);
         osc.stop(time + 1.6);
       } catch (e) {}
@@ -359,21 +358,16 @@
       if (!isBgmPlaying) return;
       const ctx = getAudioContext();
       const now = ctx.currentTime;
-      
-      // 随机弹出符合东汉意境的悠扬古风小调
-      const noteCount = 4;
-      for (let i = 0; i < noteCount; i++) {
+      for (let i = 0; i < 4; i++) {
         const randomNote = pentatonicNotes[Math.floor(Math.random() * pentatonicNotes.length)];
         playGuzhengPluck(randomNote, now + i * 0.6);
       }
-
       bgmTimer = setTimeout(scheduleAncientMelody, 2400);
     }
 
     function toggleAudio() {
       getAudioContext();
       isBgmPlaying = !isBgmPlaying;
-      
       const label = isBgmPlaying ? "🎵 乐声: 开" : "🎵 乐声: 关";
       const mBtn = document.getElementById("mainBgmBtn");
       const modalBtn = document.getElementById("modalBgmBtn");
@@ -389,9 +383,9 @@
 
     // ================= 游戏数据与核心逻辑 =================
     const bagPresets = [
-      { id: 1, title: "破漏的草绳布袋", coins: 25, note: "有些许磨损，但装着25枚沉甸甸的五铢钱" },
+      { id: 1, title: "破漏的草绳布袋", coins: 25, note: "有些许磨损，装着25枚五铢钱" },
       { id: 2, title: "平民粗麻钱袋", coins: 35, note: "平民防身积蓄，装有35文铜钱" },
-      { id: 3, title: "客商厚皮钱囊", coins: 45, note: "皮质结实，装有45文经商启动金" },
+      { id: 3, title: "客商厚皮钱囊", coins: 45, note: "皮质结实，装有45文经商金" },
       { id: 4, title: "丝织绣纹荷包", coins: 55, note: "富贵人家的随身荷包，足足55文" },
       { id: 5, title: "朱红硬木钱匣", coins: 65, note: "成色上好的东汉铜板，足足65文！" }
     ];
@@ -418,7 +412,6 @@
       { text: "北方红枣丰产滞销，摊贩降价甩卖，【枣】暴跌 35%！", itemId: "dates", rate: -0.35, note: "丰产滞销 (-35%)" }
     ];
 
-    // 全员共享突发事件池（全员遭遇同一事件，但每个人按顺序做各自抉择）
     const sharedEventPool = [
       {
         title: "神秘穿越客与秦王忠臣",
@@ -428,7 +421,7 @@
         resolve: (choice, p) => {
           if (choice === 'A') {
             p.coins = Math.max(0, p.coins - 10);
-            return `${p.name} 跟着他一路狂奔到荒郊。他刚要做法，突然仰天长啸：“秦王！臣马上可以回来效忠您了！”……原来是个疯子！你付了车夫 10 铜板车马费才逃回集市。`;
+            return `${p.name} 跟着他狂奔到荒郊。他突然仰天长啸：“秦王！臣马上可以效忠您了！”……原来是个秦朝疯子！你付了车夫 10 铜板车马费才逃回集市。`;
           } else {
             p.coins += 10;
             return `${p.name} 谨慎拒绝。对方神智竟恢复清明：“没想到你如此清醒。我回不去了，这是我身上最后的 10 铜板，赠予同胞，保重！”`;
@@ -506,11 +499,8 @@
     let bannedItemId = null;
     let morningNewsDrawn = [];
 
-    // 共享事件状态
     let todaySharedEvent = null;
     let curSharedEventPlayerIndex = 0;
-
-    // iPad传阅当面操作指针
     let curActivePlayerOrderIndex = 0;
 
     document.addEventListener("DOMContentLoaded", () => {
@@ -532,7 +522,6 @@
         document.getElementById("gamePlaySection").classList.remove("hidden");
         currentDay = 1;
         curActivePlayerOrderIndex = 0;
-        resetDailyPlayerStates();
         randomizeMarketPricesForDay(1);
         renderActivePlayerTurnUI();
       });
@@ -542,21 +531,54 @@
       document.getElementById("btnEnterTradingPhase").addEventListener("click", () => {
         document.getElementById("flowModal").classList.add("hidden");
         curActivePlayerOrderIndex = 0;
-        resetDailyPlayerStates();
         renderActivePlayerTurnUI();
       });
     });
 
-    function resetDailyPlayerStates() {
-      players.forEach(p => {
-        p.hasBuskedToday = false;
-      });
+    // 计算今日活跃玩家的轮换顺位（自动排除已破产的玩家）
+    function getTodayTurnOrder() {
+      const activePlayers = players.filter(p => !p.isBankrupt);
+      if (activePlayers.length === 0) return [];
+      const offset = (currentDay - 1) % activePlayers.length;
+      return [...activePlayers.slice(offset), ...activePlayers.slice(0, offset)];
     }
 
-    function getTodayTurnOrder() {
-      if (players.length === 0) return [];
-      const offset = (currentDay - 1) % players.length;
-      return [...players.slice(offset), ...players.slice(0, offset)];
+    // 破产检查辅助函数：铜板为0且背包全空
+    function checkPlayerBankruptcy(player) {
+      if (player.isBankrupt) return true;
+
+      const totalItems = Object.values(player.inventory).reduce((sum, q) => sum + (q || 0), 0);
+      if (player.coins <= 0 && totalItems === 0) {
+        player.isBankrupt = true;
+        player.coins = 0;
+        playEliminationSound();
+
+        const content = document.getElementById("bankruptcyModalContent");
+        content.innerHTML = `
+          <div class="font-bold text-base text-rose-400 mb-1">【${player.name}】身无分文且无货可抵！</div>
+          <p class="text-stone-300 text-xs">
+            该玩家手中铜钱彻底归零（0 文），背包内空无一物，已无任何翻盘可能。<br>
+            经官府判定<strong>【彻底破产】</strong>！该玩家与 2026 年的时空纽带已湮灭，正式出局！
+          </p>
+        `;
+        document.getElementById("bankruptcyModal").classList.remove("hidden");
+        return true;
+      }
+      return false;
+    }
+
+    function closeBankruptcyModal() {
+      document.getElementById("bankruptcyModal").classList.add("hidden");
+      // 如果当前操作的玩家刚刚破产出局，直接顺位传给下一人
+      const turnOrder = getTodayTurnOrder();
+      if (turnOrder.length === 0) {
+        alert("所有玩家均已破产出局，全军覆没！游戏结束！");
+        return;
+      }
+      if (curActivePlayerOrderIndex >= turnOrder.length) {
+        curActivePlayerOrderIndex = 0;
+      }
+      renderActivePlayerTurnUI();
     }
 
     // ================= 阶段 1：录入玩家与摸袋 =================
@@ -575,7 +597,7 @@
         coins: 0,
         role: null,
         bagInfo: null,
-        hasBuskedToday: false,
+        isBankrupt: false,
         inventory: {}
       }));
 
@@ -694,17 +716,20 @@
           deduct = "-5 铜板";
           story = `我花了 5 个铜板买了日常服饰，挺好的很合身。（无事发生）`;
         } else {
-          p.coins = Math.max(0, p.coins - 15);
-          deduct = "-15 铜板";
-          story = `官府觉得我很可疑，把我抓了起来，交了 15 铜板罚金才放了我。好在怀里还留了点碎银子！`;
+          p.coins = Math.max(0, p.coins - 20);
+          deduct = "-20 铜板";
+          story = `官府觉得我很可疑，把我抓了起来，交了 20 铜板罚金才放了我。`;
         }
 
+        // 检查换装后是否直接导致初始破产
+        const isBroke = checkPlayerBankruptcy(p);
+
         const item = document.createElement("div");
-        item.className = "p-4 bg-stone-950 rounded-xl border border-stone-800 space-y-1.5";
+        item.className = `p-4 bg-stone-950 rounded-xl border ${isBroke ? 'border-rose-700 bg-rose-950/20' : 'border-stone-800'} space-y-1.5`;
         item.innerHTML = `
           <div class="flex justify-between items-center">
             <span class="font-black text-amber-400 text-base">${p.name} <span class="text-xs text-stone-400 font-normal">(选择了${p.role==='beggar'?'乞丐装':(p.role==='normal'?'日常服饰':'不买')})</span></span>
-            <span class="text-xs text-rose-400 font-bold">${deduct} · 剩余: <b class="text-amber-300">${p.coins}文</b></span>
+            <span class="text-xs ${isBroke ? 'text-rose-500 font-black' : 'text-rose-400 font-bold'}">${deduct} · ${isBroke ? '【已破产出局】' : '剩余: <b class="text-amber-300">' + p.coins + '文</b>'}</span>
           </div>
           <p class="text-xs text-stone-200 leading-relaxed">${story}</p>
         `;
@@ -746,6 +771,16 @@
     // ================= iPad 传阅轮流交易核心界面 =================
     function renderActivePlayerTurnUI() {
       const turnOrder = getTodayTurnOrder();
+      
+      if (turnOrder.length === 0) {
+        alert("所有玩家均已宣告破产，无人回到2026年！游戏结束！");
+        return;
+      }
+
+      if (curActivePlayerOrderIndex >= turnOrder.length) {
+        curActivePlayerOrderIndex = 0;
+      }
+
       const activePlayer = turnOrder[curActivePlayerOrderIndex];
       const isLastPlayer = (curActivePlayerOrderIndex === turnOrder.length - 1);
 
@@ -761,10 +796,10 @@
       document.getElementById("activePlayerName").innerText = activePlayer.name;
       document.getElementById("activePlayerCoins").innerHTML = `${activePlayer.coins} <span class="text-xs font-normal">文</span>`;
       
-      const roleName = activePlayer.role === 'beggar' ? '乞丐装(每日施舍)' : (activePlayer.role === 'none' ? '现代装(罚15文)' : '日常百姓服');
+      const roleName = activePlayer.role === 'beggar' ? '乞丐装(每日施舍)' : (activePlayer.role === 'none' ? '现代装(被罚款)' : '日常百姓服');
       document.getElementById("activePlayerRoleTag").innerText = roleName;
 
-      // 核心调整：如果是当天最后一人，把按钮直接变为“进入下一天”，不出现“传给下一个人”和多余弹窗！
+      // 按钮自适应：最后一人显示【进入下一天】，非最后一人显示【传给下一人】
       const btnAction = document.getElementById("btnTurnAction");
       if (isLastPlayer) {
         btnAction.innerText = "🎉 全员交易完毕 · 进入下一天 ➔";
@@ -775,24 +810,9 @@
       }
 
       const isDay1 = currentDay === 1;
-      const isBusked = activePlayer.hasBuskedToday;
-
-      const btnBusking = document.getElementById("btnPerformBusking");
-      if (isBusked) {
-        btnBusking.disabled = true;
-        btnBusking.className = "w-full sm:w-auto bg-stone-800 text-stone-500 font-bold px-5 py-2.5 rounded-xl cursor-not-allowed text-xs";
-        btnBusking.innerText = "✓ 今日已卖艺打赏";
-      } else {
-        btnBusking.disabled = false;
-        btnBusking.className = "w-full sm:w-auto bg-emerald-600 hover:bg-emerald-500 text-white font-black px-5 py-2.5 rounded-xl shadow active:scale-95 transition text-xs whitespace-nowrap";
-        btnBusking.innerText = "🥁 立即当街卖艺";
-      }
-
       const sellNotice = document.getElementById("sellNotice");
-      if (isBusked) {
-        sellNotice.innerText = "【今日已卖艺】：疲惫不堪，今日锁定买卖！";
-      } else if (isDay1) {
-        sellNotice.innerText = "【第1天只进不出】：刚到洛阳无法摆摊卖出，只可买入建仓或卖艺！";
+      if (isDay1) {
+        sellNotice.innerText = "【第1天只进不出】：刚到洛阳无法摆摊卖出，只可买入建仓！";
       } else {
         sellNotice.innerText = "";
       }
@@ -803,7 +823,7 @@
 
       const myItems = Object.entries(activePlayer.inventory).filter(([_, qty]) => qty > 0);
       if (myItems.length === 0) {
-        backpackGrid.innerHTML = `<div class="col-span-2 sm:col-span-4 p-6 text-center text-xs text-stone-500 bg-stone-950/40 rounded-xl border border-dashed border-stone-800">背包空空如也，手头紧可点击上方【街头卖艺】或在下方采购！</div>`;
+        backpackGrid.innerHTML = `<div class="col-span-2 sm:col-span-4 p-6 text-center text-xs text-stone-500 bg-stone-950/40 rounded-xl border border-dashed border-stone-800">背包空空如也，快在下方市集采购吧！</div>`;
       } else {
         myItems.forEach(([id, qty]) => {
           const item = baseItems.find(i => i.id === id);
@@ -819,8 +839,8 @@
               <div class="font-black text-sm text-stone-200">${item.name}</div>
               <div class="text-xs text-stone-400 mt-1">今日可卖: <b class="${isBanned ? 'text-rose-400 line-through' : 'text-amber-400'}">${isBanned ? '官府查封' : item.price + ' 文'}</b></div>
             </div>
-            <button onclick="sellOneItem('${id}')" ${isDay1 || isBanned || isBusked ? 'disabled' : ''} class="mt-3 w-full py-1.5 rounded-lg text-xs font-bold transition ${isDay1 || isBanned || isBusked ? 'bg-stone-800 text-stone-600 cursor-not-allowed' : 'bg-rose-900/80 hover:bg-rose-800 text-rose-200 active:scale-95 border border-rose-700'}">
-              ${isBusked ? '卖艺锁定' : (isDay1 ? '今日禁售' : (isBanned ? '查封禁售' : '卖出 1 件 ➔'))}
+            <button onclick="sellOneItem('${id}')" ${isDay1 || isBanned ? 'disabled' : ''} class="mt-3 w-full py-1.5 rounded-lg text-xs font-bold transition ${isDay1 || isBanned ? 'bg-stone-800 text-stone-600 cursor-not-allowed' : 'bg-rose-900/80 hover:bg-rose-800 text-rose-200 active:scale-95 border border-rose-700'}">
+              ${isDay1 ? '今日禁售' : (isBanned ? '查封禁售' : '卖出 1 件 ➔')}
             </button>
           `;
           backpackGrid.appendChild(card);
@@ -845,8 +865,8 @@
             <div class="font-black text-sm text-stone-200">${item.name}</div>
             <div class="text-xs text-stone-400 mt-1">市价: <b class="${isBanned ? 'text-rose-400' : 'text-amber-400'}">${isBanned ? '查封禁买' : item.price + ' 文'}</b></div>
           </div>
-          <button onclick="buyOneItem('${item.id}')" ${isBanned || !canAfford || isBusked ? 'disabled' : ''} class="mt-3 w-full py-1.5 rounded-lg text-xs font-bold transition ${isBanned ? 'bg-stone-800 text-stone-600 cursor-not-allowed' : (isBusked ? 'bg-stone-800 text-stone-600 cursor-not-allowed' : (!canAfford ? 'bg-stone-800 text-stone-500 cursor-not-allowed' : 'bg-emerald-700 hover:bg-emerald-600 text-white active:scale-95 shadow'))}">
-            ${isBanned ? '今日禁买' : (isBusked ? '卖艺锁定' : (!canAfford ? '铜钱不足' : '买入 1 件 🛒'))}
+          <button onclick="buyOneItem('${item.id}')" ${isBanned || !canAfford ? 'disabled' : ''} class="mt-3 w-full py-1.5 rounded-lg text-xs font-bold transition ${isBanned ? 'bg-stone-800 text-stone-600 cursor-not-allowed' : (!canAfford ? 'bg-stone-800 text-stone-500 cursor-not-allowed' : 'bg-emerald-700 hover:bg-emerald-600 text-white active:scale-95 shadow')}">
+            ${isBanned ? '今日禁买' : (!canAfford ? '铜钱不足' : '买入 1 件 🛒')}
           </button>
         `;
         shopGrid.appendChild(card);
@@ -859,7 +879,6 @@
       }
     }
 
-    // 智能流转：到最后一人点击直接进入次日，不弹任何中断对话框！
     function handleTurnActionButton() {
       const turnOrder = getTodayTurnOrder();
       if (curActivePlayerOrderIndex >= turnOrder.length - 1) {
@@ -870,39 +889,11 @@
       }
     }
 
-    function doBusking() {
-      const turnOrder = getTodayTurnOrder();
-      const p = turnOrder[curActivePlayerOrderIndex];
-
-      if (p.hasBuskedToday) return;
-
-      const reward = Math.floor(Math.random() * 4) + 4;
-      p.coins += reward;
-      p.hasBuskedToday = true;
-      playCoinSound();
-
-      const acts = [
-        "打了一套威风凛凛的现代军体拳",
-        "在桥头跳了一段太空步机械舞",
-        "扯开嗓门高唱了一曲流行金曲",
-        "表演了一段空手变扑克魔术"
-      ];
-      const act = acts[Math.floor(Math.random() * acts.length)];
-
-      alert(`🎪 卖艺大获成功！
-
-${p.name} 在东汉闹市【${act}】，引得百姓拍手叫好，打赏了 ${reward} 铜板！
-
-（今日体力已尽，锁定商品买卖）`);
-      renderActivePlayerTurnUI();
-    }
-
     function buyOneItem(itemId) {
       const turnOrder = getTodayTurnOrder();
       const p = turnOrder[curActivePlayerOrderIndex];
       const item = baseItems.find(i => i.id === itemId);
 
-      if (p.hasBuskedToday) return;
       if (itemId === bannedItemId || p.coins < item.price) return;
 
       playCoinSound();
@@ -917,7 +908,7 @@ ${p.name} 在东汉闹市【${act}】，引得百姓拍手叫好，打赏了 ${r
       const p = turnOrder[curActivePlayerOrderIndex];
       const item = baseItems.find(i => i.id === itemId);
 
-      if (p.hasBuskedToday || itemId === bannedItemId) return;
+      if (itemId === bannedItemId) return;
       if (!p.inventory[itemId] || p.inventory[itemId] <= 0) return;
 
       playCoinSound();
@@ -940,13 +931,26 @@ ${p.name} 在东汉闹市【${act}】，引得百姓拍手叫好，打赏了 ${r
       p.coins += gain;
       playCoinSound();
       alert(`已半价变现，${p.name} 获得 ${gain} 铜钱。`);
+
+      checkPlayerBankruptcy(p);
       renderActivePlayerTurnUI();
     }
 
     function renderMiniScoreboard() {
       const el = document.getElementById("miniScoreboard");
+      const turnOrder = getTodayTurnOrder();
+      const activeP = turnOrder[curActivePlayerOrderIndex];
+
       el.innerHTML = players.map(p => {
-        const isCurrent = p.id === getTodayTurnOrder()[curActivePlayerOrderIndex]?.id;
+        if (p.isBankrupt) {
+          return `
+            <div class="p-2 rounded-lg border border-rose-900 bg-rose-950/40 text-stone-500 line-through flex justify-between items-center">
+              <span class="truncate">${p.name}</span>
+              <span class="text-rose-500 font-bold text-[10px]">已破产</span>
+            </div>
+          `;
+        }
+        const isCurrent = (activeP && p.id === activeP.id);
         return `
           <div class="p-2 rounded-lg border ${isCurrent ? 'border-amber-500 bg-amber-950/40 font-bold' : 'border-stone-800 bg-stone-950'} flex justify-between items-center">
             <span class="text-stone-300 truncate">${p.name} ${isCurrent ? '👈' : ''}</span>
@@ -969,8 +973,9 @@ ${p.name} 在东汉闹市【${act}】，引得百姓拍手叫好，打赏了 ${r
       document.getElementById("secStep4").classList.add("hidden");
       document.getElementById("modalStageBadge").innerText = `第 ${currentDay} 天 · 清晨`;
 
-      const beggars = players.filter(p => p.role === "beggar");
-      if (beggars.length > 0) {
+      // 只针对存活的乞丐玩家投骰
+      const activeBeggars = players.filter(p => !p.isBankrupt && p.role === "beggar");
+      if (activeBeggars.length > 0) {
         document.getElementById("secMorningBeggar").classList.remove("hidden");
         document.getElementById("secMorningSharedEvent").classList.add("hidden");
         document.getElementById("secMorningMarketNews").classList.add("hidden");
@@ -982,11 +987,11 @@ ${p.name} 在东汉闹市【${act}】，引得百姓拍手叫好，打赏了 ${r
     }
 
     function renderBeggarDicePhase() {
-      const beggars = players.filter(p => p.role === "beggar");
+      const activeBeggars = players.filter(p => !p.isBankrupt && p.role === "beggar");
       const list = document.getElementById("beggarRollList");
       list.innerHTML = "";
 
-      beggars.forEach(b => {
+      activeBeggars.forEach(b => {
         const item = document.createElement("div");
         item.className = "p-4 bg-stone-950 rounded-xl border border-stone-800 flex justify-between items-center";
         item.id = `beggar_box_${b.id}`;
@@ -1013,13 +1018,11 @@ ${p.name} 在东汉闹市【${act}】，引得百姓拍手叫好，打赏了 ${r
       btn.outerHTML = `<span class="text-emerald-400 font-black text-sm bg-emerald-950/60 px-3 py-1.5 rounded border border-emerald-700">掷出 ${roll} 点！好心人施舍 +${roll} 文 (余额:${p.coins})</span>`;
     }
 
-    // 清晨第二幕：全员共同遭遇同一突发事件，依次按今日顺位轮流选择
     function startMorningSharedEventPhase() {
       document.getElementById("secMorningBeggar").classList.add("hidden");
       document.getElementById("secMorningSharedEvent").classList.remove("hidden");
       document.getElementById("modalStageTitle").innerText = "今日全员突发奇遇";
 
-      // 抽取今天唯一的全员大事件
       todaySharedEvent = sharedEventPool[Math.floor(Math.random() * sharedEventPool.length)];
       curSharedEventPlayerIndex = 0;
 
@@ -1047,8 +1050,16 @@ ${p.name} 在东汉闹市【${act}】，引得百姓拍手叫好，打赏了 ${r
       const resText = todaySharedEvent.resolve(choice, curPlayer);
 
       playCoinSound();
+
+      // 检查奇遇事件扣钱后是否直接触发破产
+      const isBroke = checkPlayerBankruptcy(curPlayer);
+
       const resCard = document.getElementById("sharedEventResultCard");
-      resCard.innerHTML = `<strong>【${curPlayer.name} 的抉择结局】</strong><br>${resText}`;
+      resCard.innerHTML = `
+        <strong>【${curPlayer.name} 的抉择结局】</strong><br>
+        ${resText}
+        ${isBroke ? '<br><span class="text-rose-400 font-black">【警报：该事件导致铜钱归零且无物可卖，直接破产出局！】</span>' : ''}
+      `;
       resCard.classList.remove("hidden");
 
       document.getElementById("sharedEventChoiceSection").classList.add("hidden");
