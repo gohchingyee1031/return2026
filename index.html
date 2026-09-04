@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>重返2026：大屏控台 (房主端)</title>
+  <title>重返2026：大屏房主控台</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
   <style>
@@ -18,62 +18,190 @@
   <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-stone-900 p-4 rounded-2xl border border-stone-800 mb-4 shadow-lg">
     <div>
       <div class="flex items-center gap-3">
-        <h1 class="text-xl font-black text-amber-500">重返 2026 · 大屏幕控台</h1>
+        <h1 class="text-xl font-black text-amber-500">重返 2026 · 大屏房主控台</h1>
         <span class="text-xs bg-amber-950 text-amber-400 font-bold px-3 py-1 rounded-full border border-amber-800">
-          房间码：<b id="roomCodeDisplay" class="text-white tracking-widest text-sm">2026</b>
+          房间码：<b class="text-white tracking-widest text-sm">2026</b>
         </span>
         <span id="connStatus" class="text-[11px] px-2.5 py-0.5 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-700 font-bold">🟢 云端已连接</span>
       </div>
-      <p class="text-xs text-stone-400 mt-1">玩家请在手机打开 <b class="text-amber-300">player.html</b> 输入房间码 2026 同步联机</p>
+      <p class="text-xs text-stone-400 mt-1">玩家请在手机打开 <b class="text-amber-300">player.html</b> 输入房间码 2026 加入房间</p>
     </div>
     <div class="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
-      <button onclick="toggleAudio()" id="mainBgmBtn" class="text-xs bg-stone-800 hover:bg-stone-700 border border-stone-700 px-3 py-1.5 rounded-full text-amber-300 font-bold transition">
+      <button onclick="toggleAudio()" id="mainBgmBtn" class="text-xs bg-stone-800 hover:bg-stone-700 border border-stone-700 px-3 py-1.5 rounded-full text-amber-300 font-bold">
         🎵 乐声: 关
       </button>
       <div class="text-right">
         <div class="text-[10px] text-stone-400">集市历法</div>
-        <div id="dayDisplay" class="text-xl font-black text-amber-400">第 1 天</div>
+        <div id="dayDisplay" class="text-xl font-black text-amber-400">第 0 天 · 序幕</div>
       </div>
-      <button onclick="nextDay()" class="bg-amber-600 hover:bg-amber-500 text-white font-bold py-2.5 px-4 rounded-xl text-xs transition shadow active:scale-95">
-        结算进入下一天 ➔
-      </button>
     </div>
   </header>
 
-  <!-- 主持人开场背景故事折叠面板 -->
-  <div class="bg-stone-900/90 border border-stone-800 p-4 rounded-2xl mb-4 text-xs text-stone-300 leading-relaxed space-y-1.5">
-    <div class="flex justify-between items-center text-amber-400 font-bold text-sm">
-      <span>📜 主持人开局念白（公元102年东汉洛阳）</span>
-      <span class="text-[10px] text-stone-500">终极目标：赚够 300 文买回发簪</span>
-    </div>
-    <p>“2026年的午后，你们在古玩市场无意触碰了一支古朴的发簪，刹那间虚空扭曲跌入裂缝，醒来竟置身公元102年的东汉洛阳街头！你们必须在集市中倒买倒卖，谁先赚足 300 铜板，谁就能买下发簪独自重返2026！”</p>
-  </div>
+  <!-- ================= 阶段 1：等待大厅 (LOBBY) ================= -->
+  <div id="viewLobby" class="max-w-4xl mx-auto space-y-6 my-6">
+    <div class="bg-stone-900 border-2 border-amber-600/80 p-6 md:p-8 rounded-2xl shadow-2xl space-y-6">
+      <div class="text-center space-y-2 border-b border-stone-800 pb-5">
+        <div class="text-5xl">🏮</div>
+        <h2 class="text-2xl font-black text-amber-400">【东汉时空驿站 · 等待大厅】</h2>
+        <p class="text-xs text-stone-300">请让每位玩家拿起手机打开 <b class="text-amber-300">player.html</b>，输入房间码 <b class="text-white">2026</b> 和昵称加入！</p>
+      </div>
 
-  <main class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-    <!-- 左侧 2 列：已联机玩家动态列表 -->
-    <section class="lg:col-span-2 space-y-4">
-      <div class="bg-stone-900 p-4 rounded-2xl border border-stone-800 shadow">
+      <div>
         <div class="flex justify-between items-center mb-3">
-          <h2 class="text-base font-bold text-amber-400">已联机玩家列表与资产</h2>
-          <span id="playerCountBadge" class="text-xs text-stone-400">当前 0 人在场</span>
+          <span class="text-sm font-bold text-amber-300">已集结玩家名册：</span>
+          <span id="lobbyCount" class="text-xs text-stone-400">当前 0 人入队</span>
         </div>
-        <div id="playerList" class="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <div class="col-span-2 text-center py-12 text-xs text-stone-500 border border-dashed border-stone-800 rounded-xl">
-            等待玩家用手机打开 player.html 加入中...
+        <div id="lobbyPlayerGrid" class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div class="col-span-2 sm:col-span-4 text-center py-10 text-stone-500 border border-dashed border-stone-800 rounded-xl text-xs">
+            等待玩家手机连线中...
           </div>
         </div>
       </div>
 
-      <!-- 联机日志 -->
-      <div class="bg-stone-900 p-4 rounded-2xl border border-stone-800 text-xs text-stone-400 space-y-2">
-        <div class="font-bold text-amber-400 text-sm">💡 实时联机动态</div>
+      <div class="bg-stone-950 p-4 rounded-xl border border-stone-800 text-xs text-stone-300 leading-relaxed space-y-1">
+        <div class="font-bold text-amber-400">🎤 主持人开场念白：</div>
+        <p>“2026年的午后，你们在古玩市场触碰了神秘古簪，虚空震颤，众人跌落至公元102年东汉洛阳！脚边正散落着时空卷来的钱袋……”</p>
+      </div>
+
+      <button onclick="startGameFromLobby()" id="btnStartGame" class="w-full bg-amber-600 hover:bg-amber-500 text-white font-black py-4 rounded-xl shadow-lg transition active:scale-95 text-base">
+        全员到齐 · 开启穿越之旅 ➔
+      </button>
+    </div>
+  </div>
+
+  <!-- ================= 阶段 2：摸取钱袋 (BAG_DRAW) ================= -->
+  <div id="viewBagDraw" class="hidden max-w-4xl mx-auto space-y-6 my-6">
+    <div class="bg-stone-900 border-2 border-amber-600/80 p-6 md:p-8 rounded-2xl shadow-2xl space-y-6">
+      <div class="flex justify-between items-center border-b border-stone-800 pb-3">
+        <h2 class="text-xl font-black text-amber-400">【第一幕：抽取时空钱袋】</h2>
+        <span id="bagTurnIndicator" class="text-xs font-bold text-amber-300 bg-amber-950 px-3 py-1 rounded-full border border-amber-800"></span>
+      </div>
+      <p class="text-xs text-stone-400 text-center">请轮到的玩家在自己手机上点击挑选钱袋！大屏幕将同步翻开！</p>
+      
+      <div id="hostBagGrid" class="grid grid-cols-2 md:grid-cols-5 gap-3"></div>
+
+      <div id="bagRevealBanner" class="hidden p-4 rounded-xl bg-stone-950 border border-amber-500/50 text-center space-y-2">
+        <div id="bagRevealText" class="text-amber-300 font-bold text-sm md:text-base"></div>
+      </div>
+
+      <button id="btnProceedToDress" onclick="proceedToDressChoice()" class="hidden w-full bg-amber-600 hover:bg-amber-500 text-white font-black py-3.5 rounded-xl shadow-lg transition text-sm">
+        全员摸袋完成 · 开始挑选服饰 ➔
+      </button>
+    </div>
+  </div>
+
+  <!-- ================= 阶段 3：服饰抉择 (DRESS_CHOICE) ================= -->
+  <div id="viewDressChoice" class="hidden max-w-4xl mx-auto space-y-6 my-6">
+    <div class="bg-stone-900 border-2 border-amber-600/80 p-6 md:p-8 rounded-2xl shadow-2xl space-y-6">
+      <div class="flex justify-between items-center border-b border-stone-800 pb-3">
+        <h2 class="text-xl font-black text-amber-400">【第二幕：伪装换装 · 入乡随俗】</h2>
+        <span id="dressTurnIndicator" class="text-xs font-bold text-amber-300 bg-amber-950 px-3 py-1 rounded-full border border-amber-800"></span>
+      </div>
+      <div class="bg-stone-950 p-4 rounded-xl border border-stone-800 text-xs text-stone-300 leading-relaxed">
+        🎤 <span class="text-amber-300 font-bold">主持人念白：</span>“街上百姓看着你们奇装异服十分可疑，官差正巡视过来。各位需在手机上盲选一套衣服掩饰身份！”
+      </div>
+
+      <div id="dressProgressList" class="space-y-3"></div>
+    </div>
+  </div>
+
+  <!-- ================= 阶段 3.5：换装结果公布 (DRESS_REVEAL) ================= -->
+  <div id="viewDressReveal" class="hidden max-w-4xl mx-auto space-y-6 my-6">
+    <div class="bg-stone-900 border-2 border-amber-600/80 p-6 md:p-8 rounded-2xl shadow-2xl space-y-6">
+      <h2 class="text-xl font-black text-amber-400 border-b border-stone-800 pb-3">【全员换装抉择结果公布】</h2>
+      <p class="text-xs text-stone-400">🎤 <span class="text-amber-300 font-bold">主持人念白：</span>“现在公布每位玩家在东汉街头迎来的命运……”</p>
+      
+      <div id="dressResultCards" class="space-y-3"></div>
+
+      <button onclick="proceedToGoalIntro()" class="w-full bg-amber-600 hover:bg-amber-500 text-white font-black py-3.5 rounded-xl shadow-lg transition text-sm">
+        前往集市 · 揭晓发簪目标 ➔
+      </button>
+    </div>
+  </div>
+
+  <!-- ================= 阶段 4：核心目标公布 (GOAL_INTRO) ================= -->
+  <div id="viewGoalIntro" class="hidden max-w-4xl mx-auto space-y-6 my-6">
+    <div class="bg-stone-900 border-2 border-amber-600/80 p-6 md:p-8 rounded-2xl shadow-2xl space-y-6">
+      <h2 class="text-2xl font-black text-amber-400 border-b border-stone-800 pb-3">【核心任务：重返 2026】</h2>
+      <div class="bg-stone-950 p-5 rounded-xl border border-stone-800 space-y-3 text-stone-200 text-sm leading-relaxed">
+        <p>“你们在东市古玩行正中看到了那枚带大家穿越的发簪！”</p>
+        <p class="text-rose-400 font-black text-base">掌柜高呼：“实价 300 铜板，少一文都不卖！”</p>
+        <div class="p-3 bg-stone-900 rounded-lg border border-amber-900/50 text-xs space-y-1.5 text-stone-300">
+          <p><b class="text-amber-400">★ 获胜机制：</b> 各自为战，谁先赚够 <strong class="text-amber-300">300 铜板</strong> 买回发簪谁就回到2026！</p>
+          <p><b class="text-rose-400 font-bold">★ 破产出局：</b> 若手中铜钱归 0 且没有任何货物抵押变现，直接判定破产，时空锚点断裂，永久淘汰！</p>
+          <p><b class="text-amber-300">★ 交易阶段：</b> <strong>第一天仅能买入进货</strong>，第二天起全线自由买卖、乞丐掷色子与大盘物价暴涨暴跌！</p>
+        </div>
+      </div>
+      <button onclick="startDay1Market()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-black py-4 rounded-xl shadow-xl transition text-base">
+        开启第 1 天 · 东汉市集正式开市 ➔
+      </button>
+    </div>
+  </div>
+
+  <!-- ================= 清晨向导浮层 (乞丐掷骰 / 全员大事件 / 大盘新闻) ================= -->
+  <div id="morningOverlay" class="hidden fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4 overflow-y-auto">
+    <div class="bg-stone-900 border-2 border-amber-600 max-w-2xl w-full p-6 rounded-2xl shadow-2xl space-y-5 my-auto">
+      
+      <!-- 乞丐掷骰子阶段 -->
+      <div id="morningBeggarSection" class="space-y-4 hidden">
+        <h3 class="text-xl font-black text-amber-400">【清晨第一幕：好心人施舍】</h3>
+        <p class="text-xs text-stone-300">乞丐装玩家破晓施舍时间！请乞丐玩家在自己手机上掷骰：</p>
+        <div id="hostBeggarList" class="space-y-2"></div>
+        <button onclick="proceedToMorningEvent()" class="w-full bg-amber-600 hover:bg-amber-500 text-white font-bold py-3 rounded-xl text-sm transition">
+          乞讨完毕 · 进入全员突发奇遇 ➔
+        </button>
+      </div>
+
+      <!-- 全员共享突发事件 -->
+      <div id="morningEventSection" class="space-y-4 hidden">
+        <div class="flex justify-between items-center border-b border-stone-800 pb-2">
+          <h3 class="text-xl font-black text-amber-400">【清晨第二幕：今日全员突发奇遇】</h3>
+          <span id="hostEventTurnTag" class="text-xs text-amber-300 bg-amber-950 px-3 py-1 rounded-full border border-amber-800"></span>
+        </div>
+        <div class="p-4 bg-stone-950 rounded-xl border border-stone-800 space-y-2">
+          <div id="hostEventTitle" class="text-base font-black text-amber-300"></div>
+          <p id="hostEventDesc" class="text-xs text-stone-300 leading-relaxed"></p>
+        </div>
+        <div id="hostEventResultsList" class="space-y-2 max-h-[200px] overflow-y-auto"></div>
+        <button id="btnProceedToMarketNews" onclick="proceedToMarketNews()" class="hidden w-full bg-amber-600 hover:bg-amber-500 text-white font-bold py-3 rounded-xl text-sm transition">
+          全员抉择完毕 · 查看今日市集行情 ➔
+        </button>
+      </div>
+
+      <!-- 大盘新闻与下架 -->
+      <div id="morningNewsSection" class="space-y-4 hidden">
+        <h3 class="text-xl font-black text-amber-400">【清晨第三幕：今日东汉时局与市集暴动】</h3>
+        <div id="hostMarketNewsCards" class="space-y-3"></div>
+        <button onclick="closeMorningAndOpenTrading()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-black py-3.5 rounded-xl text-sm transition">
+          集市开盘 · 手机端自由交易 ➔
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ================= 阶段 5：正式主交易大盘 (PLAYING) ================= -->
+  <main id="viewPlaying" class="hidden grid grid-cols-1 lg:grid-cols-3 gap-4">
+    <!-- 左侧：已联机玩家列表与资产 -->
+    <section class="lg:col-span-2 space-y-4">
+      <div class="bg-stone-900 p-4 rounded-2xl border border-stone-800 shadow">
+        <div class="flex justify-between items-center mb-3">
+          <h2 class="text-base font-bold text-amber-400">玩家资产与富豪榜 (目标 300 文)</h2>
+          <span id="ruleNoticeBadge" class="text-xs bg-amber-950 text-amber-300 px-2.5 py-1 rounded-full border border-amber-800">第 1 天只进不出</span>
+        </div>
+        <div id="mainPlayerList" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
+      </div>
+
+      <!-- 实时动态日志 -->
+      <div class="bg-stone-900 p-4 rounded-2xl border border-stone-800 text-xs text-stone-400 space-y-1.5">
+        <div class="font-bold text-amber-400 text-sm">💡 实时买卖联机动态</div>
         <div id="debugLog" class="text-stone-300 font-mono bg-stone-950 p-2.5 rounded-xl border border-stone-800 text-[11px]">
-          通道监听中，手机端加入、买卖操作将实时在此滚动...
+          市集开盘，等待玩家在手机端进行买卖操作...
         </div>
       </div>
     </section>
 
-    <!-- 右侧 1 列：今日全城牌价行情 -->
+    <!-- 右侧：今日市集行情 -->
     <section class="space-y-4">
       <div class="bg-stone-900 p-4 rounded-2xl border border-stone-800 shadow">
         <div class="flex justify-between items-center mb-3">
@@ -82,21 +210,39 @@
         </div>
         <div id="marketList" class="space-y-2"></div>
       </div>
+      <button onclick="startNextDayFlow()" class="w-full bg-amber-600 hover:bg-amber-500 text-white font-black py-3 rounded-xl shadow transition text-sm">
+        结算本日 · 推进进入下一天 ➔
+      </button>
     </section>
   </main>
 
   <script>
     const SUPABASE_URL = "https://gyjkfpzgjjauasrqsosv.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd5amtmcHpnamphdWFzcnFzb3N2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg1Mjk2ODEsImV4cCI6MjEwNDEwNTY4MX0.MUqPH0bWYjSnI9gpkwVhVz3wj8UuHsGvt9WDd1SEZHo";
-
     const ROOM_ID = "2026";
+
     let supabaseClient = null;
     let roomChannel = null;
 
+    // 状态机: LOBBY -> BAG_DRAW -> DRESS_CHOICE -> DRESS_REVEAL -> GOAL_INTRO -> PLAYING
+    let gameState = "LOBBY";
     let currentDay = 1;
     let bannedItemId = null;
     let players = [];
 
+    // 钱袋数据
+    const bagPresets = [
+      { id: 1, title: "破漏的草绳布袋", coins: 25, note: "有些许磨损，装着25枚五铢钱", owner: null },
+      { id: 2, title: "平民粗麻钱袋", coins: 35, note: "平民防身积蓄，装有35文铜钱", owner: null },
+      { id: 3, title: "客商厚皮钱囊", coins: 45, note: "皮质结实，装有45文经商金", owner: null },
+      { id: 4, title: "丝织绣纹荷包", coins: 55, note: "富贵人家的随身荷包，足足55文", owner: null },
+      { id: 5, title: "朱红硬木钱匣", coins: 65, note: "成色上好的东汉铜板，足足65文！", owner: null }
+    ];
+    let bagList = [];
+    let curBagPickerIndex = 0;
+    let curDressPickerIndex = 0;
+
+    // 货物数据
     const baseItems = [
       { id: "millet", name: "小米", icon: "🌾", min: 1, max: 4, price: 2, changeNote: "" },
       { id: "dates", name: "枣", icon: "🍒", min: 2, max: 7, price: 4, changeNote: "" },
@@ -108,7 +254,82 @@
       { id: "silk", name: "丝绸", icon: "👘", min: 40, max: 180, price: 100, changeNote: "" }
     ];
 
-    // ================= 音效与古典音乐 (Web Audio API) =================
+    const marketFluctuationPool = [
+      { text: "今年麻桑大丰收，麻布货源充沛，竞争力大跌30%！", itemId: "cloth", rate: -0.3, note: "大丰收 (-30%)" },
+      { text: "洛阳突发蝗灾旱情，粮食奇缺，【小米】价格疯涨 60%！", itemId: "millet", rate: 0.6, note: "旱灾缺粮 (+60%)" },
+      { text: "太后寿宴大摆七日，御膳房扫荡活禽，【鸡】身价暴涨 50%！", itemId: "chicken", rate: 0.5, note: "宫廷急采 (+50%)" },
+      { text: "西域商队走私大量青铜，铜器贬值，【铜镜】市价大跌 40%！", itemId: "mirror", rate: -0.4, note: "外货冲击 (-40%)" },
+      { text: "官府严厉整顿私盐，水路封锁，【粗盐】黑市价暴涨 80%！", itemId: "salt", rate: 0.8, note: "官府严打 (+80%)" },
+      { text: "江南丝织机技术革新，大量丝绢入市，【丝绸】价格下调 25%！", itemId: "silk", rate: -0.25, note: "产量激增 (-25%)" },
+      { text: "严冬突袭洛阳，百姓争相饮酒驱寒，【米酒】一坛难求上涨 45%！", itemId: "wine", rate: 0.45, note: "御寒需求 (+45%)" },
+      { text: "北方红枣丰产滞销，摊贩降价甩卖，【枣】暴跌 35%！", itemId: "dates", rate: -0.35, note: "丰产滞销 (-35%)" }
+    ];
+
+    const sharedEventPool = [
+      {
+        title: "神秘穿越客与秦王忠臣",
+        desc: "集市暗巷里，一个狂躁男人拦在你们面前低吼：'你们也是2026年来的？！我知道哪里有时空回溯法阵，谁要跟我一起走？！'",
+        optA: "相信他，跟他走",
+        optB: "觉得有诈，拒绝离开",
+        resolve: (choice, p) => {
+          if (choice === 'A') {
+            p.coins = Math.max(0, p.coins - 10);
+            return `${p.name} 跟着他狂奔荒郊，发现是个秦朝疯子，支付车马费 10 铜板逃回。`;
+          } else {
+            p.coins += 10;
+            return `${p.name} 谨慎拒绝。对方神智清醒，赠予身上最后的 10 铜板相助！`;
+          }
+        }
+      },
+      {
+        title: "尚方令蔡伦的新纸测试",
+        desc: "蔡伦改进的新纸在集市秘密发售样品，摊主吆喝：'15文一张，谁有胆识买来一试？'",
+        optA: "花 15 铜板买下一张试用",
+        optB: "嫌贵不买，继续用竹简",
+        resolve: (choice, p) => {
+          if (choice === 'A') {
+            if (p.coins < 15) return `${p.name} 囊中羞涩掏不出 15 铜板，摊主白了一眼走开。`;
+            p.coins -= 15;
+            if (Math.random() > 0.4) {
+              p.coins += 40;
+              return `${p.name} 在纸上题诗，被洛阳富商以 40 铜板高价收购！净赚 25 文！`;
+            } else {
+              return `${p.name} 买到的纸质太脆遇水化烂，15 铜板打了水漂！`;
+            }
+          } else {
+            return `${p.name} 务实未买，旁边书摊老板赠送 2 铜板折头。`;
+          }
+        }
+      },
+      {
+        title: "巡夜东汉差役突击盘查",
+        desc: "一队手持长矛的官兵当街戒严，长矛一横大喊：'官府缉拿要犯，闲杂人等报上名来！'",
+        optA: "亮明行头如实自辩",
+        optB: "塞出 5 铜板打点差役",
+        resolve: (choice, p) => {
+          if (choice === 'A') {
+            if (p.role === 'beggar') {
+              p.coins += 2;
+              return `${p.name} 一身破烂乞丐装，差役嫌弃扔了 2 铜板让赶快滚开。`;
+            } else if (p.role === 'normal') {
+              return `${p.name} 穿着百姓麻服举止自然，差役盘问两句挥手放行。`;
+            } else {
+              p.coins = Math.max(0, p.coins - 15);
+              return `${p.name} 依然穿着现代服饰，差役认定为细作，狠狠罚了 15 铜板！`;
+            }
+          } else {
+            p.coins = Math.max(0, p.coins - 5);
+            return `${p.name} 塞了 5 铜板，差役指点：“今晚早点收摊。”`;
+          }
+        }
+      }
+    ];
+
+    let todaySharedEvent = null;
+    let curSharedEventPlayerIndex = 0;
+    let morningNewsDrawn = [];
+
+    // ================= 音效系统 =================
     let audioCtx = null;
     let isBgmPlaying = false;
     let bgmTimer = null;
@@ -118,9 +339,7 @@
         const AudioContext = window.AudioContext || window.webkitAudioContext;
         audioCtx = new AudioContext();
       }
-      if (audioCtx.state === 'suspended') {
-        audioCtx.resume();
-      }
+      if (audioCtx.state === 'suspended') audioCtx.resume();
       return audioCtx;
     }
 
@@ -132,7 +351,7 @@
           const osc = ctx.createOscillator();
           const gain = ctx.createGain();
           osc.type = "sine";
-          osc.frequency.setValueAtTime(freq + (Math.random() * 200 - 100), now + i * 0.04);
+          osc.frequency.setValueAtTime(freq, now + i * 0.04);
           gain.gain.setValueAtTime(0.2, now + i * 0.04);
           gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.04 + 0.25);
           osc.connect(gain);
@@ -143,48 +362,33 @@
       } catch (e) {}
     }
 
-    const pentatonicNotes = [293.66, 329.63, 369.99, 440.00, 493.88, 587.33, 659.25, 739.99, 880.00];
-
-    function playGuzhengPluck(freq, time) {
-      if (!isBgmPlaying) return;
-      try {
-        const ctx = getAudioContext();
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.type = "triangle";
-        osc.frequency.setValueAtTime(freq, time);
-        gain.gain.setValueAtTime(0, time);
-        gain.gain.linearRampToValueAtTime(0.12, time + 0.02);
-        gain.gain.exponentialRampToValueAtTime(0.001, time + 1.6);
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.start(time);
-        osc.stop(time + 1.6);
-      } catch (e) {}
-    }
-
-    function scheduleAncientMelody() {
+    const pentatonicNotes = [293.66, 329.63, 369.99, 440.00, 493.88, 587.33, 659.25];
+    function scheduleMelody() {
       if (!isBgmPlaying) return;
       const ctx = getAudioContext();
       const now = ctx.currentTime;
-      for (let i = 0; i < 4; i++) {
-        const randomNote = pentatonicNotes[Math.floor(Math.random() * pentatonicNotes.length)];
-        playGuzhengPluck(randomNote, now + i * 0.6);
+      for (let i = 0; i < 3; i++) {
+        const freq = pentatonicNotes[Math.floor(Math.random() * pentatonicNotes.length)];
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = "triangle";
+        osc.frequency.setValueAtTime(freq, now + i * 0.6);
+        gain.gain.setValueAtTime(0.1, now + i * 0.6);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.6 + 1.2);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now + i * 0.6);
+        osc.stop(now + i * 0.6 + 1.2);
       }
-      bgmTimer = setTimeout(scheduleAncientMelody, 2400);
+      bgmTimer = setTimeout(scheduleMelody, 2000);
     }
 
     function toggleAudio() {
       getAudioContext();
       isBgmPlaying = !isBgmPlaying;
-      const label = isBgmPlaying ? "🎵 乐声: 开" : "🎵 乐声: 关";
-      document.getElementById("mainBgmBtn").innerText = label;
-
-      if (isBgmPlaying) {
-        scheduleAncientMelody();
-      } else {
-        if (bgmTimer) clearTimeout(bgmTimer);
-      }
+      document.getElementById("mainBgmBtn").innerText = isBgmPlaying ? "🎵 乐声: 开" : "🎵 乐声: 关";
+      if (isBgmPlaying) scheduleMelody();
+      else if (bgmTimer) clearTimeout(bgmTimer);
     }
 
     function setLog(msg) {
@@ -192,12 +396,13 @@
       if (el) el.innerText = `[${new Date().toLocaleTimeString()}] ${msg}`;
     }
 
-    // ================= 核心启动 =================
-    function init() {
-      document.getElementById('roomCodeDisplay').innerText = ROOM_ID;
-      randomizeMarket();
-      renderAll();
+    // ================= 初始化与通信 =================
+    window.addEventListener('DOMContentLoaded', () => {
+      initSupabase();
+      renderLobby();
+    });
 
+    function initSupabase() {
       try {
         const createClientFn = window.supabase?.createClient || window.createClient;
         supabaseClient = createClientFn(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -211,15 +416,28 @@
             let p = players.find(x => x.name === payload.name);
             if (!p) {
               players.push({
+                id: players.length + 1,
                 name: payload.name,
-                coins: 35,
-                role: "normal",
+                coins: 0,
+                role: null,
+                isBankrupt: false,
                 inventory: {}
               });
-              setLog(`玩家【${payload.name}】已成功扫码/联机加入！`);
+              renderLobby();
+              broadcastState();
             }
-            broadcastFullState();
-            renderAll();
+          })
+          .on('broadcast', { event: 'PLAYER_PICK_BAG' }, ({ payload }) => {
+            handleBagPick(payload.playerName, payload.bagIdx);
+          })
+          .on('broadcast', { event: 'PLAYER_PICK_DRESS' }, ({ payload }) => {
+            handleDressPick(payload.playerName, payload.dressKey);
+          })
+          .on('broadcast', { event: 'PLAYER_ROLL_DICE' }, ({ payload }) => {
+            handleBeggarDiceRoll(payload.playerName);
+          })
+          .on('broadcast', { event: 'PLAYER_EVENT_CHOICE' }, ({ payload }) => {
+            handleEventChoice(payload.playerName, payload.choice);
           })
           .on('broadcast', { event: 'PLAYER_BUY' }, ({ payload }) => {
             handleBuy(payload.playerName, payload.itemId);
@@ -229,62 +447,324 @@
           })
           .subscribe((status) => {
             if (status === 'SUBSCRIBED') {
-              setLog("云端通道连接就绪，等待玩家手机加入...");
-              broadcastFullState();
+              broadcastState();
             }
           });
       } catch (err) {
-        console.error(err);
-        setLog("初始化异常：" + err.message);
+        console.error("Supabase init error:", err);
       }
     }
 
-    function broadcastFullState() {
+    function broadcastState() {
       if (!roomChannel) return;
+
+      const activePlayers = players.filter(p => !p.isBankrupt);
+      let curTurnPlayerName = "";
+      if (gameState === "BAG_DRAW" && activePlayers[curBagPickerIndex]) {
+        curTurnPlayerName = activePlayers[curBagPickerIndex].name;
+      } else if (gameState === "DRESS_CHOICE" && activePlayers[curDressPickerIndex]) {
+        curTurnPlayerName = activePlayers[curDressPickerIndex].name;
+      } else if (gameState === "MORNING_EVENT" && activePlayers[curSharedEventPlayerIndex]) {
+        curTurnPlayerName = activePlayers[curSharedEventPlayerIndex].name;
+      }
+
       roomChannel.send({
         type: 'broadcast',
         event: 'SYNC_STATE',
         payload: {
+          gameState,
           currentDay,
           bannedItemId,
+          activePlayerName: curTurnPlayerName,
+          bagList,
+          todaySharedEvent,
           marketItems: baseItems,
           players
         }
       });
     }
 
+    // ================= 阶段 1：等待大厅 =================
+    function renderLobby() {
+      document.getElementById('lobbyCount').innerText = `当前 ${players.length} 人在场`;
+      const grid = document.getElementById('lobbyPlayerGrid');
+      if (players.length === 0) {
+        grid.innerHTML = `<div class="col-span-2 sm:col-span-4 text-center py-10 text-stone-500 border border-dashed border-stone-800 rounded-xl text-xs">等待玩家手机加入中...</div>`;
+      } else {
+        grid.innerHTML = players.map(p => `
+          <div class="p-3 bg-stone-950 border border-stone-800 rounded-xl text-center space-y-1">
+            <div class="text-2xl">👤</div>
+            <div class="font-bold text-sm text-stone-100">${p.name}</div>
+            <span class="text-[10px] text-emerald-400 bg-emerald-950 px-2 py-0.5 rounded">就绪</span>
+          </div>
+        `).join('');
+      }
+    }
+
+    function startGameFromLobby() {
+      if (players.length === 0) {
+        alert("请至少等待 1 位玩家用手机加入后再开始！");
+        return;
+      }
+
+      getAudioContext();
+      gameState = "BAG_DRAW";
+      bagList = [...bagPresets].sort(() => Math.random() - 0.5);
+      curBagPickerIndex = 0;
+
+      document.getElementById('viewLobby').classList.add('hidden');
+      document.getElementById('viewBagDraw').classList.remove('hidden');
+
+      renderHostBags();
+      broadcastState();
+    }
+
+    // ================= 阶段 2：摸取钱袋 =================
+    function renderHostBags() {
+      const activePlayers = players.filter(p => !p.isBankrupt);
+      const curP = activePlayers[curBagPickerIndex];
+
+      if (curP) {
+        document.getElementById('bagTurnIndicator').innerText = `正在摸袋：${curP.name}`;
+      }
+
+      const grid = document.getElementById('hostBagGrid');
+      grid.innerHTML = bagList.map((bag, idx) => {
+        if (bag.owner) {
+          return `
+            <div class="p-4 rounded-xl bg-stone-950 border border-stone-800 opacity-40 text-center">
+              <div class="text-3xl mb-1">👝</div>
+              <div class="text-xs text-stone-500">已归属</div>
+              <div class="text-xs text-amber-400 font-bold">${bag.owner}</div>
+              <div class="text-xs text-stone-600">(${bag.coins}文)</div>
+            </div>
+          `;
+        }
+        return `
+          <div class="p-4 rounded-xl bg-stone-800 border-2 border-amber-600/70 text-center">
+            <div class="text-4xl mb-1">💰</div>
+            <div class="text-sm font-black text-amber-300">钱袋 ${idx + 1}</div>
+            <div class="text-[10px] text-stone-400 mt-1">等待翻开...</div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function handleBagPick(pName, idx) {
+      const activePlayers = players.filter(p => !p.isBankrupt);
+      const curP = activePlayers[curBagPickerIndex];
+      if (!curP || curP.name !== pName) return;
+
+      const bag = bagList[idx];
+      if (!bag || bag.owner) return;
+
+      playCoinSound();
+      bag.owner = curP.name;
+      curP.coins = bag.coins;
+
+      renderHostBags();
+
+      const banner = document.getElementById('bagRevealBanner');
+      const text = document.getElementById('bagRevealText');
+      text.innerHTML = `🎉 玩家 <span class="text-white">${curP.name}</span> 摸得 <span class="text-amber-400 font-black">【${bag.title}】</span>，获得启动资金 <span class="text-emerald-400 font-black">${bag.coins} 铜钱</span>！<br><span class="text-xs text-stone-400">“${bag.note}”</span>`;
+      banner.classList.remove('hidden');
+
+      if (curBagPickerIndex >= activePlayers.length - 1) {
+        document.getElementById('btnProceedToDress').classList.remove('hidden');
+      } else {
+        curBagPickerIndex++;
+        renderHostBags();
+      }
+      broadcastState();
+    }
+
+    function proceedToDressChoice() {
+      gameState = "DRESS_CHOICE";
+      curDressPickerIndex = 0;
+
+      document.getElementById('viewBagDraw').classList.add('hidden');
+      document.getElementById('viewDressChoice').classList.remove('hidden');
+
+      renderDressProgress();
+      broadcastState();
+    }
+
+    // ================= 阶段 3：服饰抉择 =================
+    function renderDressProgress() {
+      const activePlayers = players.filter(p => !p.isBankrupt);
+      const curP = activePlayers[curDressPickerIndex];
+      if (curP) {
+        document.getElementById('dressTurnIndicator').innerText = `请玩家【${curP.name}】在手机上做决定`;
+      }
+
+      const list = document.getElementById('dressProgressList');
+      list.innerHTML = activePlayers.map(p => `
+        <div class="p-3 bg-stone-950 border border-stone-800 rounded-xl flex justify-between items-center">
+          <span class="font-bold text-stone-200">${p.name}</span>
+          <span class="text-xs ${p.role ? 'text-emerald-400 font-bold' : 'text-stone-500'}">
+            ${p.role ? '✓ 已暗自选好' : (p.name === curP?.name ? '👉 正在手机抉择中...' : '等待轮到...')}
+          </span>
+        </div>
+      `).join('');
+    }
+
+    function handleDressPick(pName, dressKey) {
+      const activePlayers = players.filter(p => !p.isBankrupt);
+      const curP = activePlayers[curDressPickerIndex];
+      if (!curP || curP.name !== pName) return;
+
+      curP.role = dressKey;
+
+      if (curDressPickerIndex >= activePlayers.length - 1) {
+        revealAllDressResults();
+      } else {
+        curDressPickerIndex++;
+        renderDressProgress();
+        broadcastState();
+      }
+    }
+
+    function revealAllDressResults() {
+      gameState = "DRESS_REVEAL";
+      document.getElementById('viewDressChoice').classList.add('hidden');
+      document.getElementById('viewDressReveal').classList.remove('hidden');
+
+      const cards = document.getElementById('dressResultCards');
+      cards.innerHTML = players.map(p => {
+        let story = "";
+        let deduct = "";
+        if (p.role === "beggar") {
+          p.coins = Math.max(0, p.coins - 1);
+          deduct = "-1 铜板";
+          story = `花了一个铜板买乞丐装，每日破晓将获得好心人施舍（投掷 1-6 铜板）。`;
+        } else if (p.role === "normal") {
+          p.coins = Math.max(0, p.coins - 5);
+          deduct = "-5 铜板";
+          story = `花了 5 铜板换穿百姓麻布常服，得体合身，无事发生。`;
+        } else {
+          p.coins = Math.max(0, p.coins - 15);
+          deduct = "-15 铜板";
+          story = `官府觉得奇装异服十分可疑，当街拿问，缴纳了 15 铜板罚金才得放行！`;
+        }
+
+        return `
+          <div class="p-4 bg-stone-950 border border-stone-800 rounded-xl space-y-1">
+            <div class="flex justify-between items-center">
+              <span class="font-bold text-amber-400 text-sm">${p.name} <span class="text-xs text-stone-400 font-normal">(${p.role==='beggar'?'乞丐装':(p.role==='normal'?'日常服饰':'不买')})</span></span>
+              <span class="text-xs text-rose-400 font-bold">${deduct} · 剩余: <b class="text-amber-300">${p.coins}文</b></span>
+            </div>
+            <p class="text-xs text-stone-300 leading-relaxed">${story}</p>
+          </div>
+        `;
+      }).join('');
+
+      broadcastState();
+    }
+
+    function proceedToGoalIntro() {
+      gameState = "GOAL_INTRO";
+      document.getElementById('viewDressReveal').classList.add('hidden');
+      document.getElementById('viewGoalIntro').classList.remove('hidden');
+      broadcastState();
+    }
+
+    function startDay1Market() {
+      gameState = "PLAYING";
+      currentDay = 1;
+      randomizeMarket();
+
+      document.getElementById('viewGoalIntro').classList.add('hidden');
+      document.getElementById('viewPlaying').classList.remove('hidden');
+      document.getElementById('dayDisplay').innerText = `第 1 天`;
+      document.getElementById('ruleNoticeBadge').innerText = "第 1 天只进不出";
+
+      renderMainGame();
+      broadcastState();
+    }
+
+    // ================= 阶段 4：正式主市场交易 =================
+    function renderMainGame() {
+      document.getElementById('dayDisplay').innerText = `第 ${currentDay} 天`;
+
+      // 渲染主玩家列表
+      const pContainer = document.getElementById('mainPlayerList');
+      pContainer.innerHTML = players.map(p => {
+        const invStr = Object.entries(p.inventory)
+          .filter(([_, q]) => q > 0)
+          .map(([id, q]) => `${baseItems.find(i => i.id === id)?.name || id}x${q}`)
+          .join(', ') || '空';
+
+        const roleText = p.role === 'beggar' ? '乞丐装' : (p.role === 'none' ? '现代装' : '日常服');
+        const isWinner = p.coins >= 300;
+
+        return `
+          <div class="bg-stone-950 p-4 rounded-xl border ${p.isBankrupt ? 'border-rose-900 opacity-40' : (isWinner ? 'border-amber-400 bg-amber-950/30' : 'border-stone-800')}">
+            <div class="flex justify-between items-center mb-1.5">
+              <div>
+                <span class="font-bold text-stone-100 text-base">${p.name}</span>
+                <span class="text-[10px] text-stone-400 ml-1">(${roleText})</span>
+              </div>
+              <span class="text-amber-400 font-black text-2xl">${p.coins} <span class="text-xs text-stone-400">文</span></span>
+            </div>
+            <div class="text-xs text-stone-400">背包持有: <span class="text-stone-200 font-medium">${invStr}</span></div>
+            ${p.isBankrupt ? '<div class="text-xs text-rose-500 font-bold mt-1">💥 已宣告破产出局</div>' : ''}
+            ${isWinner ? '<div class="text-xs text-amber-300 font-bold mt-1 animate-pulse">👑 已赚满 300 铜板！回到 2026 年！</div>' : ''}
+          </div>
+        `;
+      }).join('');
+
+      // 渲染市场牌价
+      const mContainer = document.getElementById('marketList');
+      mContainer.innerHTML = baseItems.map(item => {
+        const isBanned = item.id === bannedItemId;
+        return `
+          <div class="flex justify-between items-center p-3 rounded-xl bg-stone-950 border ${isBanned ? 'border-rose-900 opacity-50' : 'border-stone-800'}">
+            <div class="flex items-center gap-2">
+              <span class="text-xl">${item.icon}</span>
+              <div>
+                <span class="text-sm font-bold ${isBanned ? 'line-through text-stone-500' : 'text-stone-200'}">${item.name}</span>
+                ${item.changeNote ? `<span class="text-[10px] text-amber-400 ml-1">(${item.changeNote})</span>` : ''}
+              </div>
+            </div>
+            <span class="text-sm font-black ${isBanned ? 'text-rose-400' : 'text-amber-400'}">${isBanned ? '官府查封' : item.price + ' 文'}</span>
+          </div>
+        `;
+      }).join('');
+    }
+
     function handleBuy(pName, itemId) {
       const p = players.find(x => x.name === pName);
       const item = baseItems.find(i => i.id === itemId);
-      if (!p || !item) return;
+      if (!p || !item || p.isBankrupt) return;
       if (itemId === bannedItemId || p.coins < item.price) return;
 
       playCoinSound();
       p.coins -= item.price;
       p.inventory[itemId] = (p.inventory[itemId] || 0) + 1;
-      setLog(`玩家【${pName}】在手机买入 1 件【${item.name}】(-${item.price}文)`);
-      broadcastFullState();
-      renderAll();
+      setLog(`玩家【${pName}】买入 1 件【${item.name}】(-${item.price}文)`);
+      renderMainGame();
+      broadcastState();
     }
 
     function handleSell(pName, itemId) {
       if (currentDay === 1) return;
       const p = players.find(x => x.name === pName);
       const item = baseItems.find(i => i.id === itemId);
-      if (!p || !item) return;
+      if (!p || !item || p.isBankrupt) return;
       if (itemId === bannedItemId || !p.inventory[itemId] || p.inventory[itemId] <= 0) return;
 
       playCoinSound();
       p.coins += item.price;
       p.inventory[itemId]--;
-      setLog(`玩家【${pName}】在手机卖出 1 件【${item.name}】(+${item.price}文)`);
-      broadcastFullState();
-      renderAll();
+      setLog(`玩家【${pName}】卖出 1 件【${item.name}】(+${item.price}文)`);
+      renderMainGame();
+      broadcastState();
     }
 
     function randomizeMarket() {
       baseItems.forEach(item => {
         item.price = Math.floor(Math.random() * (item.max - item.min + 1)) + item.min;
+        item.changeNote = "";
       });
 
       if (currentDay > 1) {
@@ -297,59 +777,144 @@
       }
     }
 
-    function nextDay() {
+    // ================= 清晨结算向导 =================
+    function startNextDayFlow() {
       currentDay++;
       randomizeMarket();
-      setLog(`主持人推进至第 ${currentDay} 天！全城牌价已更新。`);
-      broadcastFullState();
-      renderAll();
-    }
 
-    function renderAll() {
-      document.getElementById('dayDisplay').innerText = `第 ${currentDay} 天`;
-      document.getElementById('playerCountBadge').innerText = `当前 ${players.length} 人在场`;
+      // 抽取大盘异动新闻
+      const shuffledNews = [...marketFluctuationPool].sort(() => Math.random() - 0.5);
+      morningNewsDrawn = shuffledNews.slice(0, 2);
+      morningNewsDrawn.forEach(news => {
+        const item = baseItems.find(i => i.id === news.itemId);
+        if (item) {
+          item.price = Math.max(1, Math.round(item.price * (1 + news.rate)));
+          item.changeNote = news.note;
+        }
+      });
 
-      const pList = document.getElementById('playerList');
-      if (players.length === 0) {
-        pList.innerHTML = `<div class="col-span-2 text-center py-12 text-xs text-stone-500 border border-dashed border-stone-800 rounded-xl">等待玩家用手机打开 player.html 加入中...</div>`;
-      } else {
-        pList.innerHTML = players.map(p => {
-          const invStr = Object.entries(p.inventory)
-            .filter(([_, q]) => q > 0)
-            .map(([id, q]) => `${baseItems.find(i => i.id === id)?.name || id}x${q}`)
-            .join(', ') || '空';
+      const activeBeggars = players.filter(p => !p.isBankrupt && p.role === "beggar");
+      document.getElementById('morningOverlay').classList.remove('hidden');
 
-          const isWinner = p.coins >= 300;
+      if (activeBeggars.length > 0) {
+        gameState = "MORNING_BEGGAR";
+        document.getElementById('morningBeggarSection').classList.remove('hidden');
+        document.getElementById('morningEventSection').classList.add('hidden');
+        document.getElementById('morningNewsSection').classList.add('hidden');
 
-          return `
-            <div class="bg-stone-950 p-4 rounded-xl border ${isWinner ? 'border-amber-400 bg-amber-950/30' : 'border-stone-800'}">
-              <div class="flex justify-between items-center mb-2">
-                <span class="font-bold text-stone-100 text-base">${p.name}</span>
-                <span class="text-amber-400 font-black text-2xl">${p.coins} <span class="text-xs text-stone-400">文</span></span>
-              </div>
-              <div class="text-xs text-stone-400">背包持有: <span class="text-stone-200 font-medium">${invStr}</span></div>
-              ${isWinner ? '<div class="text-xs text-amber-300 font-black mt-2 animate-bounce">👑 资金达成 300 文！已买回发簪回到2026年！</div>' : ''}
-            </div>
-          `;
-        }).join('');
-      }
-
-      const mList = document.getElementById('marketList');
-      mList.innerHTML = baseItems.map(item => {
-        const isBanned = item.id === bannedItemId;
-        return `
-          <div class="flex justify-between items-center p-3 rounded-xl bg-stone-950 border ${isBanned ? 'border-rose-900 opacity-50' : 'border-stone-800'}">
-            <div class="flex items-center gap-2">
-              <span class="text-xl">${item.icon}</span>
-              <span class="text-sm font-bold ${isBanned ? 'line-through text-stone-500' : 'text-stone-200'}">${item.name}</span>
-            </div>
-            <span class="text-sm font-black ${isBanned ? 'text-rose-400' : 'text-amber-400'}">${isBanned ? '官府查封' : item.price + ' 文'}</span>
+        document.getElementById('hostBeggarList').innerHTML = activeBeggars.map(b => `
+          <div class="p-3 bg-stone-950 border border-stone-800 rounded-xl flex justify-between items-center">
+            <span class="font-bold text-amber-400">${b.name}</span>
+            <span id="beggarStatus_${b.name}" class="text-xs text-stone-400">等待在手机上掷骰...</span>
           </div>
-        `;
-      }).join('');
+        `).join('');
+      } else {
+        proceedToMorningEvent();
+      }
+      broadcastState();
     }
 
-    window.addEventListener('DOMContentLoaded', init);
+    function handleBeggarDiceRoll(pName) {
+      const p = players.find(x => x.name === pName);
+      if (!p) return;
+
+      playCoinSound();
+      const roll = Math.floor(Math.random() * 6) + 1;
+      p.coins += roll;
+
+      const el = document.getElementById(`beggarStatus_${pName}`);
+      if (el) {
+        el.innerHTML = `<span class="text-emerald-400 font-bold">掷得 ${roll} 点！施舍 +${roll} 文</span>`;
+      }
+      broadcastState();
+    }
+
+    function proceedToMorningEvent() {
+      gameState = "MORNING_EVENT";
+      document.getElementById('morningBeggarSection').classList.add('hidden');
+      document.getElementById('morningEventSection').classList.remove('hidden');
+
+      todaySharedEvent = sharedEventPool[Math.floor(Math.random() * sharedEventPool.length)];
+      curSharedEventPlayerIndex = 0;
+
+      document.getElementById('hostEventTitle').innerText = todaySharedEvent.title;
+      document.getElementById('hostEventDesc').innerText = todaySharedEvent.desc;
+      document.getElementById('hostEventResultsList').innerHTML = "";
+
+      updateHostEventPrompt();
+      broadcastState();
+    }
+
+    function updateHostEventPrompt() {
+      const activePlayers = players.filter(p => !p.isBankrupt);
+      const curP = activePlayers[curSharedEventPlayerIndex];
+      if (curP) {
+        document.getElementById('hostEventTurnTag').innerText = `请【${curP.name}】在手机上做出抉择`;
+      }
+    }
+
+    function handleEventChoice(pName, choice) {
+      const activePlayers = players.filter(p => !p.isBankrupt);
+      const curP = activePlayers[curSharedEventPlayerIndex];
+      if (!curP || curP.name !== pName) return;
+
+      playCoinSound();
+      const resText = todaySharedEvent.resolve(choice, curP);
+
+      const list = document.getElementById('hostEventResultsList');
+      const div = document.createElement('div');
+      div.className = "p-2.5 bg-stone-950 border border-stone-800 rounded-lg text-xs space-y-1";
+      div.innerHTML = `<div class="font-bold text-amber-300">【${curP.name}】抉择结果：</div><p class="text-stone-300">${resText}</p>`;
+      list.appendChild(div);
+
+      if (curSharedEventPlayerIndex >= activePlayers.length - 1) {
+        document.getElementById('btnProceedToMarketNews').classList.remove('hidden');
+      } else {
+        curSharedEventPlayerIndex++;
+        updateHostEventPrompt();
+      }
+      broadcastState();
+    }
+
+    function proceedToMarketNews() {
+      gameState = "MORNING_NEWS";
+      document.getElementById('morningEventSection').classList.add('hidden');
+      document.getElementById('morningNewsSection').classList.remove('hidden');
+
+      const bannedItem = baseItems.find(i => i.id === bannedItemId);
+      const container = document.getElementById('hostMarketNewsCards');
+      container.innerHTML = `
+        <div class="p-3 bg-rose-950/60 border border-rose-700 rounded-xl space-y-0.5">
+          <div class="text-[11px] font-bold text-rose-400">🚨 今日官府封锁禁售通告</div>
+          <div class="text-xs font-black text-rose-200">【${bannedItem?.name}】今日遭严查，集市全部停售停买！</div>
+        </div>
+      `;
+
+      morningNewsDrawn.forEach(news => {
+        const item = baseItems.find(i => i.id === news.itemId);
+        const isUp = news.rate > 0;
+        const div = document.createElement("div");
+        div.className = `p-3 rounded-xl border ${isUp ? 'bg-amber-950/40 border-amber-600/70' : 'bg-blue-950/40 border-blue-700'} space-y-0.5`;
+        div.innerHTML = `
+          <div class="flex justify-between items-center">
+            <span class="text-xs font-bold ${isUp ? 'text-amber-400' : 'text-blue-300'}">📰 行情异动</span>
+            <span class="text-[10px] px-1.5 py-0.5 rounded ${isUp ? 'bg-amber-600/30 text-amber-300' : 'bg-blue-600/30 text-blue-300'}">${news.note}</span>
+          </div>
+          <p class="text-xs text-stone-200">${news.text}</p>
+        `;
+        container.appendChild(div);
+      });
+
+      broadcastState();
+    }
+
+    function closeMorningAndOpenTrading() {
+      document.getElementById('morningOverlay').classList.add('hidden');
+      gameState = "PLAYING";
+      document.getElementById('ruleNoticeBadge').innerText = "买卖全线开放中";
+      renderMainGame();
+      broadcastState();
+    }
   </script>
 </body>
 </html>
