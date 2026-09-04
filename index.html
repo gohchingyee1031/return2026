@@ -62,17 +62,29 @@
       </div>
     </div>
 
-    <!-- 步骤 3：换装抉择（玩家现场亲自挑选） -->
+    <!-- 步骤 3：换装抉择（玩家盲选，不剧透结果） -->
     <div id="step3Container" class="space-y-5 hidden">
       <h2 class="text-xl font-black text-amber-400">【身份掩饰：入乡随俗还是另有打算？】</h2>
       <div class="bg-stone-950 p-4 rounded-xl border border-stone-800 text-xs text-stone-300 leading-relaxed">
-        🎤 <span class="text-amber-300 font-bold">主持人念白：</span>“街上的百姓看你们一身奇装异服十分可疑，佩刀官差正向这边走来。为了不惹麻烦，每位玩家必须亲自决定现在的衣着：”
+        🎤 <span class="text-amber-300 font-bold">主持人念白：</span>“街上的百姓看你们一身奇装异服十分可疑，佩刀官差正向这边走来。为了不必要的麻烦，你们决定买一套？”
       </div>
 
       <div id="dressList" class="space-y-4 max-h-[350px] overflow-y-auto pr-1"></div>
 
       <button id="btnConfirmDress" type="button" class="w-full bg-amber-600 hover:bg-amber-500 text-white font-bold py-3.5 rounded-xl shadow-lg transition">
-        确认全员装束 · 进驻市集 ➔
+        查看换装抉择后果 ➔
+      </button>
+    </div>
+
+    <!-- 步骤 3.5：换装结果公布幕 -->
+    <div id="step3ResultContainer" class="space-y-5 hidden">
+      <h2 class="text-xl font-black text-amber-400">【换装结算：各自的奇遇】</h2>
+      <p class="text-xs text-stone-400">🎤 <span class="text-amber-300 font-bold">主持人念白：</span>“各位做出的不同选择，立即迎来了截然不同的命运……”</p>
+      
+      <div id="dressResultList" class="space-y-3 max-h-[350px] overflow-y-auto pr-1"></div>
+
+      <button id="btnProceedToStep4" type="button" class="w-full bg-amber-600 hover:bg-amber-500 text-white font-bold py-3.5 rounded-xl shadow-lg transition">
+        前往东汉市集 · 揭示目标 ➔
       </button>
     </div>
 
@@ -281,6 +293,13 @@
       // 步骤 3 确认换装
       document.getElementById("btnConfirmDress").addEventListener("click", onConfirmDress);
 
+      // 步骤 3.5 前往步骤 4
+      document.getElementById("btnProceedToStep4").addEventListener("click", () => {
+        document.getElementById("step3ResultContainer").classList.add("hidden");
+        document.getElementById("step4Container").classList.remove("hidden");
+        document.getElementById("wizardStepTitle").innerText = "核心目标";
+      });
+
       // 步骤 4 开启第1天
       document.getElementById("btnStartGamePlay").addEventListener("click", onStartDay1);
 
@@ -396,41 +415,32 @@
       }
     }
 
-    // 渲染衣着选项（不 Assume，由玩家亲自单选）
+    // 渲染衣着选项（完全隐藏剧透与后果）
     function renderDressUI() {
       const container = document.getElementById("dressList");
       container.innerHTML = "";
 
       players.forEach(p => {
         const item = document.createElement("div");
-        item.className = "p-4 bg-stone-950 rounded-xl border border-stone-800 space-y-2";
+        item.className = "p-4 bg-stone-950 rounded-xl border border-stone-800 space-y-3";
         item.innerHTML = `
           <div class="flex justify-between items-center">
-            <div class="font-bold text-amber-400">${p.name}</div>
+            <div class="font-bold text-amber-400 text-base">${p.name}</div>
             <div class="text-xs text-stone-300">手中铜钱: <b class="text-amber-300">${p.coins} 文</b></div>
           </div>
-          <div class="text-xs text-stone-400">请该玩家当场决定穿什么：</div>
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-2 text-xs pt-1">
-            <label class="cursor-pointer p-2.5 rounded-lg border border-stone-800 bg-stone-900 flex flex-col justify-between">
-              <div>
-                <input type="radio" name="dress_${p.id}" value="beggar" class="mr-1.5" />
-                <span class="font-bold text-stone-200">乞丐装</span> <span class="text-rose-400">(-1文)</span>
-              </div>
-              <p class="text-[11px] text-stone-400 mt-1">每天清晨掷色子得 1-6 文施舍</p>
+          <div class="text-xs text-stone-400">请该玩家决定购买哪种：</div>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs pt-1">
+            <label class="cursor-pointer p-3 rounded-lg border border-stone-800 bg-stone-900 hover:border-amber-500/50 flex items-center gap-2">
+              <input type="radio" name="dress_${p.id}" value="beggar" class="accent-amber-500" />
+              <span class="font-bold text-stone-200 text-sm">乞丐装</span>
             </label>
-            <label class="cursor-pointer p-2.5 rounded-lg border border-stone-800 bg-stone-900 flex flex-col justify-between">
-              <div>
-                <input type="radio" name="dress_${p.id}" value="normal" class="mr-1.5" />
-                <span class="font-bold text-stone-200">日常服饰</span> <span class="text-rose-400">(-5文)</span>
-              </div>
-              <p class="text-[11px] text-stone-400 mt-1">得体合身，融入市井，无事发生</p>
+            <label class="cursor-pointer p-3 rounded-lg border border-stone-800 bg-stone-900 hover:border-amber-500/50 flex items-center gap-2">
+              <input type="radio" name="dress_${p.id}" value="normal" class="accent-amber-500" />
+              <span class="font-bold text-stone-200 text-sm">日常服饰</span>
             </label>
-            <label class="cursor-pointer p-2.5 rounded-lg border border-stone-800 bg-stone-900 flex flex-col justify-between">
-              <div>
-                <input type="radio" name="dress_${p.id}" value="none" class="mr-1.5" />
-                <span class="font-bold text-stone-200">不买/穿现代装</span> <span class="text-rose-500 font-bold">(-20文)</span>
-              </div>
-              <p class="text-[11px] text-stone-400 mt-1">被差役当奸细抓捕，罚20文才放人</p>
+            <label class="cursor-pointer p-3 rounded-lg border border-stone-800 bg-stone-900 hover:border-amber-500/50 flex items-center gap-2">
+              <input type="radio" name="dress_${p.id}" value="none" class="accent-amber-500" />
+              <span class="font-bold text-stone-200 text-sm">不买</span>
             </label>
           </div>
         `;
@@ -443,29 +453,56 @@
       });
     }
 
+    // 确认换装并展示真实结算剧本
     function onConfirmDress() {
       for (let p of players) {
         if (!p.chosenDress) {
-          alert(`请先为【${p.name}】选择装束！`);
+          alert(`请先为【${p.name}】做出选择！`);
           return;
         }
       }
 
-      // 执行换装扣除
+      const resultContainer = document.getElementById("dressResultList");
+      resultContainer.innerHTML = "";
+
+      // 执行换装扣除并展示独立文本
       players.forEach(p => {
         p.role = p.chosenDress;
+        let storyDesc = "";
+        let costDesc = "";
+
         if (p.role === "beggar") {
           p.coins = Math.max(0, p.coins - 1);
+          costDesc = "-1 铜板";
+          storyDesc = "我花了一个铜板买了乞丐装，穿上衣服居然每天都有好心人施舍我（每日开始前掷色子获得 1-6 个铜板）。";
         } else if (p.role === "normal") {
           p.coins = Math.max(0, p.coins - 5);
+          costDesc = "-5 铜板";
+          storyDesc = "我花了5个铜板买了日常服饰，挺好的很合身。（无事发生）";
         } else {
           p.coins = Math.max(0, p.coins - 20);
+          costDesc = "-20 铜板";
+          storyDesc = "官府觉得我很可疑，把我抓了起来，给了 20 铜板才放了我。";
         }
+
+        const resItem = document.createElement("div");
+        resItem.className = "p-4 bg-stone-950 rounded-xl border border-stone-800 space-y-1.5";
+        resItem.innerHTML = `
+          <div class="flex justify-between items-center">
+            <span class="font-bold text-amber-400 text-sm">${p.name}</span>
+            <div class="text-xs">
+              <span class="text-rose-400 font-bold mr-2">${costDesc}</span>
+              <span class="text-stone-300">剩余: <b class="text-amber-300">${p.coins}文</b></span>
+            </div>
+          </div>
+          <p class="text-xs text-stone-200 leading-relaxed">${storyDesc}</p>
+        `;
+        resultContainer.appendChild(resItem);
       });
 
       document.getElementById("step3Container").classList.add("hidden");
-      document.getElementById("step4Container").classList.remove("hidden");
-      document.getElementById("wizardStepTitle").innerText = "核心目标";
+      document.getElementById("step3ResultContainer").classList.remove("hidden");
+      document.getElementById("wizardStepTitle").innerText = "换装结算";
     }
 
     function onStartDay1() {
