@@ -11,7 +11,7 @@
     .bag-card:hover { transform: translateY(-4px); }
   </style>
 </head>
-<body class="bg-stone-950 text-stone-100 min-h-screen p-3 md:p-6 select-none">
+<body class="bg-stone-950 text-stone-100 min-h-screen p-3 md:p-6">
 
   <!-- 第 0 天：序章剧本全屏向导 -->
   <div id="dayZeroModal" class="fixed inset-0 bg-stone-950/95 z-50 flex items-center justify-center p-3 md:p-6 overflow-y-auto">
@@ -47,7 +47,7 @@
             <input id="rawPlayerNames" type="text" value="玩家A, 玩家B, 玩家C" 
               class="flex-1 bg-stone-950 border border-stone-700 focus:border-amber-500 rounded-lg p-3 text-sm text-white focus:outline-none" 
               placeholder="例如: 小明, 小红, 阿强" />
-            <button onclick="startBagDrawingPhase()" class="bg-amber-600 hover:bg-amber-500 text-white font-bold px-6 py-3 rounded-lg shadow-lg active:scale-95 transition">
+            <button type="button" onclick="startBagDrawingPhase()" class="cursor-pointer relative z-10 bg-amber-600 hover:bg-amber-500 text-white font-bold px-6 py-3 rounded-lg shadow-lg active:scale-95 transition">
               录入并开始抽袋 ➔
             </button>
           </div>
@@ -310,7 +310,8 @@
     // --- 第 0 天 序章逻辑 ---
 
     function startBagDrawingPhase() {
-      const raw = document.getElementById('rawPlayerNames').value;
+      const inputEl = document.getElementById('rawPlayerNames');
+      const raw = inputEl ? inputEl.value : ' ';
       const names = raw.split(/[,，、\s]+/).map(s => s.trim()).filter(Boolean);
       if (names.length === 0) {
         alert("请至少输入一位玩家的名字！");
