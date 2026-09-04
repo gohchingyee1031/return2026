@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>重返2026：我的钱袋与市集</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 </head>
 <body class="bg-stone-950 text-stone-100 min-h-screen p-4 select-none font-sans pb-10">
 
@@ -28,6 +28,7 @@
       <button onclick="joinGame()" class="w-full bg-amber-600 hover:bg-amber-500 text-white font-bold py-3.5 rounded-xl transition shadow active:scale-95 text-sm">
         进入游戏 ➔
       </button>
+      <div id="joinStatus" class="text-center text-[11px] text-stone-400 mt-2"></div>
     </div>
   </div>
 
@@ -38,7 +39,10 @@
     <div class="bg-gradient-to-r from-stone-900 via-amber-950/40 to-stone-900 border border-amber-600/60 rounded-2xl p-4 flex justify-between items-center shadow-lg">
       <div>
         <span class="text-xs text-stone-400 block">当前玩家</span>
-        <span id="meName" class="text-lg font-black text-white"></span>
+        <div class="flex items-center gap-2">
+          <span id="meName" class="text-lg font-black text-white"></span>
+          <span id="meTurnBadge" class="text-[10px] px-2 py-0.5 rounded-full font-bold"></span>
+        </div>
       </div>
       <div class="text-right">
         <span class="text-xs text-stone-400 block">手中铜钱</span>
@@ -55,25 +59,25 @@
       <div id="myInventoryList" class="space-y-2"></div>
     </div>
 
-    <!-- 下半区：今日集市牌价与购买 -->
+    <!-- 下半区：今日集市牌价 -->
     <div class="bg-stone-900 p-4 rounded-2xl border border-stone-800 space-y-3">
-      <h2 class="text-sm font-bold text-amber-400">🏪 今日全城牌价 (点击买入)</h2>
+      <h2 class="text-sm font-bold text-amber-400">🏪 今日全城牌价 (实时变动)</h2>
       <div id="marketShopList" class="space-y-2"></div>
     </div>
 
   </div>
 
   <script>
-    // ！！！保持与 index.html 完全一致的配置！！！
     const SUPABASE_URL = "https://gyjkfpzgjjauasrqsosv.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd5amtmcHpnamphdWFzcnFzb3N2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg1Mjk2ODEsImV4cCI6MjEwNDEwNTY4MX0.MUqPH0bWYjSnI9gpkwVhVz3wj8UuHsGvt9WDd1SEZHo";
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+    let supabaseClient = null;
     let roomChannel = null;
     let myName = "";
     let localState = {
       currentDay: 1,
       bannedItemId: null,
+      activePlayerName: "",
       marketItems: [],
       players: []
     };
@@ -88,30 +92,40 @@
       }
 
       myName = name;
-      document.getElementById('loginCard').classList.add('hidden');
-      document.getElementById('playInterface').classList.remove('hidden');
-      document.getElementById('meName').innerText = myName;
+      document.getElementById('joinStatus').innerText = "正在建立云端实时通道...";
 
-      // 订阅广播频道
-      roomChannel = supabase.channel(`room_${room}`, {
-        config: { broadcast: { self: false } }
-      });
+      try {
+        const createClientFn = window.supabase?.createClient || window.createClient;
+        supabaseClient = createClientFn(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-      roomChannel
-        .on('broadcast', { event: 'SYNC_STATE' }, ({ payload }) => {
-          localState = payload;
-          renderMobileUI();
-        })
-        .subscribe((status) => {
-          if (status === 'SUBSCRIBED') {
-            // 向大屏幕报到加入
-            roomChannel.send({
-              type: 'broadcast',
-              event: 'PLAYER_JOIN',
-              payload: { name: myName }
-            });
-          }
+        roomChannel = supabaseClient.channel(`room_${room}`, {
+          config: { broadcast: { self: false } }
         });
+
+        roomChannel
+          .on('broadcast', { event: 'SYNC_STATE' }, ({ payload }) => {
+            localState = payload;
+            renderMobileUI();
+          })
+          .subscribe((status) => {
+            if (status === 'SUBSCRIBED') {
+              document.getElementById('loginCard').classList.add('hidden');
+              document.getElementById('playInterface').classList.remove('hidden');
+              document.getElementById('meName').innerText = myName;
+
+              // 向大屏幕发入场信号
+              roomChannel.send({
+                type: 'broadcast',
+                event: 'PLAYER_JOIN',
+                payload: { name: myName }
+              });
+            } else {
+              document.getElementById('joinStatus').innerText = "状态: " + status;
+            }
+          });
+      } catch (e) {
+        alert("连接失败：" + e.message);
+      }
     }
 
     function reqBuy(itemId) {
@@ -138,14 +152,24 @@
         document.getElementById('meCoins').innerHTML = `${me.coins} <span class="text-xs font-normal">文</span>`;
       }
 
+      const isMyTurn = localState.activePlayerName === myName;
+      const turnBadge = document.getElementById('meTurnBadge');
+      if (isMyTurn) {
+        turnBadge.innerText = "🟢 轮到你操作";
+        turnBadge.className = "text-[10px] px-2 py-0.5 rounded-full font-bold bg-emerald-950 text-emerald-300 border border-emerald-700 animate-pulse";
+      } else {
+        turnBadge.innerText = `⏳ 等待 ${localState.activePlayerName || '大屏'} 行动`;
+        turnBadge.className = "text-[10px] px-2 py-0.5 rounded-full font-bold bg-stone-800 text-stone-400 border border-stone-700";
+      }
+
       const isDay1 = localState.currentDay === 1;
       document.getElementById('dayNotice').innerText = isDay1 ? "第 1 天只进不出" : `第 ${localState.currentDay} 天`;
 
-      // 1. 渲染我的库存卡片
+      // 渲染背包
       const invContainer = document.getElementById('myInventoryList');
       invContainer.innerHTML = "";
-      if (!me || Object.values(me.inventory).every(q => q <= 0)) {
-        invContainer.innerHTML = `<div class="text-center py-4 text-xs text-stone-500">背包空空，快在下方买入货物吧！</div>`;
+      if (!me || Object.values(me.inventory || {}).every(q => q <= 0)) {
+        invContainer.innerHTML = `<div class="text-center py-4 text-xs text-stone-500">背包空空，在下方采购商品吧！</div>`;
       } else {
         Object.entries(me.inventory).forEach(([itemId, qty]) => {
           if (qty <= 0) return;
@@ -159,7 +183,7 @@
               <span class="text-xl">${item?.icon || '📦'}</span>
               <div>
                 <div class="font-bold text-sm text-stone-200">${item?.name} <span class="text-xs text-amber-400 font-normal">x${qty}</span></div>
-                <div class="text-[11px] text-stone-400">今日单价: ${isBanned ? '官府禁售' : item?.price + '文'}</div>
+                <div class="text-[11px] text-stone-400">今日挂牌: ${isBanned ? '已查封' : item?.price + '文'}</div>
               </div>
             </div>
             <button onclick="reqSell('${itemId}')" ${isDay1 || isBanned ? 'disabled' : ''} class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition ${isDay1 || isBanned ? 'bg-stone-800 text-stone-600 cursor-not-allowed' : 'bg-rose-900/80 hover:bg-rose-800 text-rose-200 active:scale-95'}">
@@ -170,7 +194,7 @@
         });
       }
 
-      // 2. 渲染集市价格列表
+      // 渲染商品
       const shopContainer = document.getElementById('marketShopList');
       shopContainer.innerHTML = "";
       localState.marketItems.forEach(item => {
@@ -184,6 +208,7 @@
             <span class="text-lg">${item.icon}</span>
             <div>
               <span class="text-sm font-bold ${isBanned ? 'line-through text-stone-500' : 'text-stone-200'}">${item.name}</span>
+              ${item.changeNote ? `<span class="text-[10px] text-amber-400 ml-1">(${item.changeNote})</span>` : ''}
               <span class="text-xs font-black ml-2 ${isBanned ? 'text-rose-400' : 'text-amber-400'}">${isBanned ? '查封' : item.price + '文'}</span>
             </div>
           </div>
