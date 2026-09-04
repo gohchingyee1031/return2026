@@ -81,7 +81,6 @@
       <p id="prologueStatusTip" class="text-xs text-stone-400"></p>
     </div>
 
-    <!-- 动态选项卡 -->
     <div id="mobilePrologueOptions" class="space-y-2.5"></div>
 
     <div id="prologueWaitingNotice" class="hidden p-6 bg-stone-900 rounded-xl border border-stone-800 text-center space-y-2">
@@ -109,7 +108,7 @@
     <div id="diceResultBox" class="hidden p-3 bg-stone-950 rounded-xl border border-emerald-700 text-emerald-400 font-black text-sm"></div>
   </div>
 
-  <!-- ================= 清晨环节：轮流抽取 2 个不重复事件 (突发或大盘) ================= -->
+  <!-- ================= 清晨环节：东汉气运签 (突发事件全员轮流选) ================= -->
   <div id="viewDailyEventDraw" class="hidden max-w-md mx-auto space-y-3 my-4">
     <div class="p-4 bg-stone-900 border-2 border-amber-600/70 rounded-2xl space-y-3">
       <div class="text-center space-y-1 border-b border-stone-800 pb-2">
@@ -117,29 +116,29 @@
         <p id="dailyEventTurnTip" class="text-xs text-stone-400"></p>
       </div>
 
-      <!-- 尚未抽卡时：显示 3 张遮盖的神秘牌签供轮到者翻牌 -->
+      <!-- 尚未抽卡时：显示 3 张遮盖的神秘牌签供指定抽签玩家翻牌 -->
       <div id="eventCardDeckSection" class="hidden space-y-2">
-        <p class="text-xs text-emerald-400 font-bold text-center animate-pulse">👉 轮到你了！点击下方任一张翻开今日气运：</p>
+        <p class="text-xs text-emerald-400 font-bold text-center animate-pulse">👉 轮到你了！点击下方任一张翻开气运签：</p>
         <div class="grid grid-cols-3 gap-2 pt-1">
           <button onclick="drawDailyEventOnPhone()" class="interactive-card p-4 bg-stone-950 border-2 border-amber-500/70 hover:border-amber-400 rounded-xl text-center">
             <div class="text-2xl mb-1">🎴</div>
-            <div class="text-xs font-bold text-amber-300">气运签 A</div>
+            <div class="text-xs font-bold text-amber-300">气运签 ①</div>
             <div class="text-[10px] text-stone-500 mt-0.5">点击翻开</div>
           </button>
           <button onclick="drawDailyEventOnPhone()" class="interactive-card p-4 bg-stone-950 border-2 border-amber-500/70 hover:border-amber-400 rounded-xl text-center">
             <div class="text-2xl mb-1">🎴</div>
-            <div class="text-xs font-bold text-amber-300">气运签 B</div>
+            <div class="text-xs font-bold text-amber-300">气运签 ②</div>
             <div class="text-[10px] text-stone-500 mt-0.5">点击翻开</div>
           </button>
           <button onclick="drawDailyEventOnPhone()" class="interactive-card p-4 bg-stone-950 border-2 border-amber-500/70 hover:border-amber-400 rounded-xl text-center">
             <div class="text-2xl mb-1">🎴</div>
-            <div class="text-xs font-bold text-amber-300">气运签 C</div>
+            <div class="text-xs font-bold text-amber-300">气运签 ③</div>
             <div class="text-[10px] text-stone-500 mt-0.5">点击翻开</div>
           </button>
         </div>
       </div>
 
-      <!-- 若抽到的是【突发事件】，当场在手机上做出二选一抉择 -->
+      <!-- 若抽到【突发事件】，全员玩家依次在此做 A / B 抉择 -->
       <div id="personalEventChoiceSection" class="hidden space-y-2.5 pt-1">
         <div class="flex items-center gap-2">
           <span class="text-2xl">⚡</span>
@@ -159,7 +158,7 @@
         </div>
       </div>
 
-      <!-- 抽中大盘新闻或已提交抉择后的等待提示 -->
+      <!-- 等待其他玩家或已做完抉择的提示框 -->
       <div id="eventWaitNoticeBox" class="hidden p-4 bg-stone-950 rounded-xl text-center text-xs text-stone-300 leading-relaxed"></div>
     </div>
   </div>
@@ -204,7 +203,7 @@
 
     let hasRolledDiceThisMorning = false;
     let hasDrawnEventThisRound = false;
-    let hasDecidedPersonalEvent = false;
+    let hasDecidedPersonalEventThisRound = false;
 
     let localState = {
       gameState: "LOBBY",
@@ -329,7 +328,7 @@
         renderMobileDailyEventDraw();
       } else if (state === "PLAYING") {
         hasDrawnEventThisRound = false;
-        hasDecidedPersonalEvent = false;
+        hasDecidedPersonalEventThisRound = false;
         document.getElementById('viewPlaying').classList.remove('hidden');
         renderMobileTradingUI();
       }
@@ -439,7 +438,7 @@
       document.getElementById('diceResultBox').classList.remove('hidden');
     }
 
-    // 每日轮流抽取 2 个不重复事件 (突发或大盘)
+    // 每日气运签抽签与全员轮流做选择
     function renderMobileDailyEventDraw() {
       const isMyTurn = (localState.activePlayerName === myName);
       const curEv = localState.currentDrawnEvent;
@@ -449,9 +448,11 @@
       const personalSection = document.getElementById('personalEventChoiceSection');
       const waitNotice = document.getElementById('eventWaitNoticeBox');
 
-      // 1. 如果当前还没有翻牌：且轮到我
+      // 1. 尚未翻开当前气运签
       if (!curEv) {
+        hasDecidedPersonalEventThisRound = false;
         personalSection.classList.add('hidden');
+
         if (isMyTurn) {
           deckSection.classList.remove('hidden');
           waitNotice.classList.add('hidden');
@@ -459,36 +460,34 @@
         } else {
           deckSection.classList.add('hidden');
           waitNotice.classList.remove('hidden');
-          waitNotice.innerText = `正在等待【${localState.activePlayerName || '其他玩家'}】在手机上翻牌抽签...`;
+          waitNotice.innerText = `正在等待【${localState.activePlayerName || '指定玩家'}】在手机上翻牌抽签...`;
           tip.innerText = "每日轮流抽取 2 张气运签";
         }
       } else {
-        // 2. 已经翻牌：判断是突发事件还是大盘事件
+        // 2. 当前签已经翻开
         deckSection.classList.add('hidden');
 
         if (curEv.type === "personal") {
-          // 只有翻出这张牌的玩家需要做二选一！其他人等待
-          if (isMyTurn) {
-            if (hasDecidedPersonalEvent) {
-              personalSection.classList.add('hidden');
-              waitNotice.classList.remove('hidden');
-              waitNotice.innerText = "✓ 你的抉择已提交并在大屏幕揭晓！请看大屏幕！";
-            } else {
-              personalSection.classList.remove('hidden');
-              waitNotice.classList.add('hidden');
+          // 突发事件：全员轮流做选择！
+          if (hasDecidedPersonalEventThisRound) {
+            personalSection.classList.add('hidden');
+            waitNotice.classList.remove('hidden');
+            waitNotice.innerHTML = `✓ 你的抉择已提交！<br><span class="text-stone-400 text-[11px]">正在等待其他玩家做抉择... 全员选完后大屏幕将统一揭晓结局！</span>`;
+          } else if (isMyTurn) {
+            personalSection.classList.remove('hidden');
+            waitNotice.classList.add('hidden');
 
-              document.getElementById('personalEvTitle').innerText = curEv.title;
-              document.getElementById('personalEvDesc').innerText = curEv.desc;
-              document.getElementById('personalEvOptA').innerText = curEv.optA;
-              document.getElementById('personalEvOptB').innerText = curEv.optB;
-            }
+            document.getElementById('personalEvTitle').innerText = curEv.title;
+            document.getElementById('personalEvDesc').innerText = curEv.desc;
+            document.getElementById('personalEvOptA').innerText = curEv.optA;
+            document.getElementById('personalEvOptB').innerText = curEv.optB;
           } else {
             personalSection.classList.add('hidden');
             waitNotice.classList.remove('hidden');
-            waitNotice.innerHTML = `【${localState.activePlayerName}】抽中突发事件：<b class="text-amber-400">【${curEv.title}】</b>！<br>正等待其在手机做出抉择，请观看大屏幕！`;
+            waitNotice.innerHTML = `突发大事件：<b class="text-amber-400">【${curEv.title}】</b>！<br>正在等待【${localState.activePlayerName}】在手机做出抉择... 稍后将轮到你！`;
           }
         } else {
-          // 大盘事件：直接展示影响说明，不需做二选一
+          // 大盘物价事件：大屏直接生效，手机展示说明
           personalSection.classList.add('hidden');
           waitNotice.classList.remove('hidden');
           waitNotice.innerHTML = `📢 抽中全城大盘时局签：<b class="text-rose-400">【${curEv.title}】</b>！<br>${curEv.desc}<br><span class="text-[11px] text-amber-300">市价已即时变动，请看大屏幕！</span>`;
@@ -497,8 +496,7 @@
     }
 
     function drawDailyEventOnPhone() {
-      if (localState.activePlayerName !== myName || hasDrawnEventThisRound) return;
-      hasDrawnEventThisRound = true;
+      if (localState.activePlayerName !== myName) return;
 
       roomChannel.send({
         type: 'broadcast',
@@ -508,13 +506,13 @@
     }
 
     function submitPersonalEventChoice(choice) {
-      if (hasDecidedPersonalEvent) return;
-      hasDecidedPersonalEvent = true;
+      if (hasDecidedPersonalEventThisRound) return;
+      hasDecidedPersonalEventThisRound = true;
 
       document.getElementById('personalEventChoiceSection').classList.add('hidden');
       const waitNotice = document.getElementById('eventWaitNoticeBox');
       waitNotice.classList.remove('hidden');
-      waitNotice.innerText = "✓ 你的抉择已提交，大屏幕已揭晓结局！";
+      waitNotice.innerHTML = `✓ 你的抉择已提交！<br><span class="text-stone-400 text-[11px]">正在等待其他玩家依次选择... 全员选完后大屏幕将统一公布结果！</span>`;
 
       roomChannel.send({
         type: 'broadcast',
@@ -529,9 +527,7 @@
       const isDay1 = localState.currentDay === 1;
       document.getElementById('dayNotice').innerText = isDay1 ? "第 1 天只进不出" : `第 ${localState.currentDay} 天`;
 
-      // 检查我是否已经确认结束今日交易
       const isDone = me && me.hasConfirmedTradeToday;
-      const lockBanner = document.getElementById('tradeLockBanner');
       const statusText = document.getElementById('myTradeStatusText');
       const btnConfirm = document.getElementById('btnConfirmTradeFinish');
 
@@ -567,7 +563,7 @@
               <span class="text-xl">${item?.icon || '📦'}</span>
               <div>
                 <div class="font-bold text-sm text-stone-200">${item?.name} <span class="text-xs text-amber-400 font-normal">x${qty}</span></div>
-                <div class="text-[11px] text-stone-400">今日挂牌: ${isBanned ? '已查封' : item?.price + '文'}</div>
+                <div class="text-[11px] text-stone-400">今日单价: ${isBanned ? '已查封' : (item?.price + (me.sellBonus||0)) + '文' + (me.sellBonus>0?'(含加成)':'')}</div>
               </div>
             </div>
             <button onclick="reqSell('${itemId}')" ${isDay1 || isBanned || isDone ? 'disabled' : ''} class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition ${isDay1 || isBanned || isDone ? 'bg-stone-800 text-stone-600 cursor-not-allowed' : 'bg-rose-900/80 hover:bg-rose-800 text-rose-200 active:scale-95'}">
