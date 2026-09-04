@@ -3,269 +3,496 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>重返2026：主持人控台</title>
+  <title>重返2026：东汉集市桌游</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-    .bag-item { transition: transform 0.2s; cursor: pointer; }
-    .bag-item:hover { transform: translateY(-4px); }
+    .interactive-card { transition: all 0.2s ease; }
+    .interactive-card:active { transform: scale(0.97); }
   </style>
 </head>
-<body class="bg-stone-950 text-stone-100 min-h-screen p-4 md:p-6">
+<body class="bg-stone-950 text-stone-100 min-h-screen p-3 md:p-6 select-none">
 
-  <!-- ================= 序章向导容器 ================= -->
-  <div id="prologueSection" class="max-w-3xl mx-auto my-6 bg-stone-900 border-2 border-amber-600 p-6 md:p-8 rounded-2xl shadow-2xl space-y-6">
-    <div class="flex justify-between items-center border-b border-stone-800 pb-3">
-      <span class="px-3 py-1 rounded bg-amber-600/30 text-amber-400 text-xs font-bold border border-amber-500/40">第 0 天 · 序幕</span>
-      <span id="wizardStepTitle" class="text-sm font-bold text-amber-300">时空迷失</span>
-    </div>
-
-    <!-- 步骤 1：背景与名字录入 -->
-    <div id="step1Container" class="space-y-4">
-      <h2 class="text-2xl font-black text-amber-400">【穿越启程：神秘古簪】</h2>
-      <div class="bg-stone-950 p-4 md:p-5 rounded-xl border border-stone-800 space-y-3 text-stone-300 text-sm leading-relaxed">
-        <p class="text-stone-200 font-medium">
-          🎤 <span class="text-amber-300 font-bold">主持人念白：</span>“原本只是2026年一个平静的午后，你们结伴在古玩市场的旧摊位漫步。在一堆杂乱老物件里，一支通体温润的古雅发簪吸引了你们的注意……”
-        </p>
-        <p>“当你们的手指无意触碰发簪的刹那，四周光影骤变，整片空间剧烈震颤扭曲，伴随着强烈的眩晕，所有人被瞬间卷入了无底的虚空裂缝！”</p>
-        <p class="text-amber-200">“不知过了多久，尘土与牲口的气味将你们呛醒。抬眼望去，青砖土瓦、古车辘辘——这里竟是<strong>公元102年（东汉和帝永元十四年）</strong>！而在你们脚边的尘泥里，正散落着5个被时空风暴卷来的钱袋……”</p>
+  <!-- ================= 全屏向导流程模态框 ================= -->
+  <div id="flowModal" class="fixed inset-0 bg-black/95 z-50 flex items-center justify-center p-3 md:p-6 overflow-y-auto">
+    <div class="bg-stone-900 border-2 border-amber-600 max-w-3xl w-full p-5 md:p-8 rounded-2xl shadow-2xl space-y-6 my-auto">
+      
+      <!-- 顶部状态条 -->
+      <div class="flex justify-between items-center border-b border-stone-800 pb-3">
+        <div class="flex items-center gap-2">
+          <span id="modalStageBadge" class="px-3 py-1 rounded bg-amber-600/30 text-amber-400 text-xs font-bold border border-amber-500/40">第 0 天 · 序幕</span>
+          <span id="modalStageTitle" class="text-sm font-black text-amber-300">时空迷失</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <button onclick="toggleAudio()" id="modalBgmBtn" class="text-xs bg-stone-800 border border-stone-700 px-2.5 py-1 rounded-full text-amber-300">🎵 乐声: 关</button>
+          <span class="text-xs text-stone-400">iPad 接力模式</span>
+        </div>
       </div>
 
-      <div class="space-y-2 pt-2">
-        <label class="block text-xs font-bold text-stone-300">请输入参与探险的玩家名字（用空格或逗号隔开）：</label>
-        <div class="flex flex-col sm:flex-row gap-2">
-          <input id="playerInput" type="text" value="玩家A 玩家B" 
-            class="flex-1 bg-stone-950 border border-stone-700 focus:border-amber-500 rounded-lg p-3 text-sm text-white focus:outline-none" 
-            placeholder="例如: 小明 小红 阿强" />
-          <button id="btnSubmitPlayers" type="button" class="bg-amber-600 hover:bg-amber-500 text-white font-bold px-6 py-3 rounded-lg shadow-lg active:scale-95 transition">
-            录入并开始抽袋 ➔
+      <!-- 阶段 1：录入玩家 -->
+      <div id="secStep1" class="space-y-4">
+        <h2 class="text-2xl font-black text-amber-400">【第一幕：穿越启程】</h2>
+        <div class="bg-stone-950 p-4 md:p-5 rounded-xl border border-stone-800 space-y-3 text-stone-300 text-sm leading-relaxed">
+          <p class="text-stone-200 font-medium">
+            🎤 <span class="text-amber-300 font-bold">主持人念白：</span>“2026年的午后，你们在古玩市场无意触碰了一支古朴的发簪，刹那间虚空扭曲，整个人被吸入裂缝。醒来时，眼前竟是<strong>公元102年的东汉洛阳</strong>！脚边正散落着时空钱袋……”
+          </p>
+        </div>
+
+        <div class="space-y-2 pt-2">
+          <label class="block text-xs font-bold text-stone-300">录入参与玩家姓名（用空格或逗号隔开）：</label>
+          <div class="flex flex-col sm:flex-row gap-2">
+            <input id="inputNames" type="text" value="玩家A 玩家B 玩家C" 
+              class="flex-1 bg-stone-950 border border-stone-700 focus:border-amber-500 rounded-lg p-3 text-sm text-white focus:outline-none" />
+            <button id="btnStartGame" type="button" class="bg-amber-600 hover:bg-amber-500 text-white font-bold px-6 py-3 rounded-lg shadow-lg active:scale-95 transition">
+              录入并开始摸钱袋 ➔
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 阶段 2：摸钱袋 -->
+      <div id="secStep2" class="space-y-5 hidden">
+        <div class="flex justify-between items-center">
+          <h2 class="text-xl font-black text-amber-400">【初始资金：抽取钱袋】</h2>
+          <span id="bagPickerTag" class="text-sm font-bold text-amber-300 px-3 py-1 bg-stone-800 rounded-lg border border-amber-600/40"></span>
+        </div>
+        <p class="text-xs text-stone-400">请当前轮到的玩家亲自点击下方其中一个钱袋翻开！</p>
+        <div id="bagCardGrid" class="grid grid-cols-2 md:grid-cols-5 gap-3"></div>
+
+        <div id="bagRevealBox" class="hidden p-4 rounded-xl bg-stone-950 border border-amber-500/50 text-center space-y-2">
+          <div id="bagRevealText" class="text-amber-300 font-bold text-sm md:text-base"></div>
+          <button id="btnNextBagDraw" type="button" class="bg-amber-600 hover:bg-amber-500 text-white font-bold px-6 py-2 rounded-lg text-sm transition">
+            下一位抽取
           </button>
         </div>
       </div>
-    </div>
 
-    <!-- 步骤 2：屏幕出 5 个钱袋轮流抽取 -->
-    <div id="step2Container" class="space-y-5 hidden">
-      <div class="flex justify-between items-center">
-        <h2 class="text-xl font-black text-amber-400">【初始资金：抽取钱袋】</h2>
-        <span id="turnIndicator" class="text-sm font-bold text-amber-300 px-3 py-1 bg-stone-800 rounded-lg border border-amber-600/40"></span>
-      </div>
-      <p class="text-xs text-stone-400">地上共有 5 个钱袋。请当前轮到的玩家亲自在屏幕上点击其中 1 个翻开！</p>
-      
-      <div id="bagCardGrid" class="grid grid-cols-2 md:grid-cols-5 gap-3"></div>
+      <!-- 阶段 3：服饰抉择 -->
+      <div id="secStep3" class="space-y-5 hidden">
+        <div class="flex justify-between items-center">
+          <h2 class="text-xl font-black text-amber-400">【身份掩饰：衣着定夺】</h2>
+          <span id="dressPickerTag" class="text-sm font-bold text-amber-300 px-3 py-1 bg-stone-800 rounded-lg border border-amber-600/40"></span>
+        </div>
+        <div class="bg-stone-950 p-4 rounded-xl border border-stone-800 text-xs text-stone-300 leading-relaxed">
+          🎤 <span class="text-amber-300 font-bold">主持人念白：</span>“街上百姓看着你们奇装异服十分可疑，官差正巡视过来。为了避免不必要的麻烦，你们决定买一套？”
+        </div>
 
-      <div id="bagResultBox" class="hidden p-4 rounded-xl bg-stone-950 border border-amber-500/50 text-center space-y-2">
-        <div id="bagResultText" class="text-amber-300 font-bold text-sm md:text-base"></div>
-        <button id="btnNextDraw" type="button" class="bg-amber-600 hover:bg-amber-500 text-white font-bold px-6 py-2 rounded-lg text-sm transition">
-          下一位抽取
-        </button>
-      </div>
-    </div>
-
-    <!-- 步骤 3：换装抉择（玩家盲选，不剧透结果） -->
-    <div id="step3Container" class="space-y-5 hidden">
-      <h2 class="text-xl font-black text-amber-400">【身份掩饰：入乡随俗还是另有打算？】</h2>
-      <div class="bg-stone-950 p-4 rounded-xl border border-stone-800 text-xs text-stone-300 leading-relaxed">
-        🎤 <span class="text-amber-300 font-bold">主持人念白：</span>“街上的百姓看你们一身奇装异服十分可疑，佩刀官差正向这边走来。为了不必要的麻烦，你们决定买一套？”
-      </div>
-
-      <div id="dressList" class="space-y-4 max-h-[350px] overflow-y-auto pr-1"></div>
-
-      <button id="btnConfirmDress" type="button" class="w-full bg-amber-600 hover:bg-amber-500 text-white font-bold py-3.5 rounded-xl shadow-lg transition">
-        查看换装抉择后果 ➔
-      </button>
-    </div>
-
-    <!-- 步骤 3.5：换装结果公布幕 -->
-    <div id="step3ResultContainer" class="space-y-5 hidden">
-      <h2 class="text-xl font-black text-amber-400">【换装结算：各自的奇遇】</h2>
-      <p class="text-xs text-stone-400">🎤 <span class="text-amber-300 font-bold">主持人念白：</span>“各位做出的不同选择，立即迎来了截然不同的命运……”</p>
-      
-      <div id="dressResultList" class="space-y-3 max-h-[350px] overflow-y-auto pr-1"></div>
-
-      <button id="btnProceedToStep4" type="button" class="w-full bg-amber-600 hover:bg-amber-500 text-white font-bold py-3.5 rounded-xl shadow-lg transition">
-        前往东汉市集 · 揭示目标 ➔
-      </button>
-    </div>
-
-    <!-- 步骤 4：核心目标公布 -->
-    <div id="step4Container" class="space-y-5 hidden">
-      <h2 class="text-2xl font-black text-amber-400">【核心任务：重返2026】</h2>
-      <div class="bg-stone-950 p-5 rounded-xl border border-stone-800 space-y-3 text-stone-200 text-sm leading-relaxed">
-        <p>“你们在东市古玩行正中看到了那枚带大家穿越的发簪！”</p>
-        <p class="text-rose-400 font-black text-base">掌柜冷笑：“神物现世，实价 300 铜板，少一文恕不相让！”</p>
-        <div class="p-3 bg-stone-900 rounded-lg border border-amber-900/50 text-xs space-y-2 text-stone-300">
-          <p><b class="text-amber-400">★ 获胜条件：</b> 各自为战，谁先赚够 <strong class="text-amber-300">300 铜板</strong> 买回发簪谁就回到2026！</p>
-          <p><b class="text-rose-400">★ 破产机制：</b> 铜板归 0 时，主持人以今日牌价半价回收其货物变现；若依然无法补齐则出局。</p>
-          <p><b class="text-amber-300">★ 交易阶段：</b> <strong>第一天仅能买入进货</strong>，次日起解禁卖出，并每天抽取 1 次奇遇事件！</p>
+        <div class="p-5 bg-stone-950 rounded-xl border border-stone-800 space-y-4 text-center">
+          <div id="dressPickerPrompt" class="text-lg font-bold text-amber-300"></div>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-lg mx-auto">
+            <button onclick="pickDressChoice('beggar')" type="button" class="interactive-card bg-stone-800 hover:bg-stone-700 border-2 border-stone-700 hover:border-amber-500 p-5 rounded-xl text-center">
+              <span class="block text-3xl mb-1">🥣</span>
+              <span class="block text-lg font-black text-amber-300 mb-1">乞丐装</span>
+              <span class="text-xs text-stone-400">破旧烂布袍</span>
+            </button>
+            <button onclick="pickDressChoice('normal')" type="button" class="interactive-card bg-stone-800 hover:bg-stone-700 border-2 border-stone-700 hover:border-amber-500 p-5 rounded-xl text-center">
+              <span class="block text-3xl mb-1">👘</span>
+              <span class="block text-lg font-black text-amber-300 mb-1">日常服饰</span>
+              <span class="text-xs text-stone-400">普通百姓麻服</span>
+            </button>
+            <button onclick="pickDressChoice('none')" type="button" class="interactive-card bg-stone-800 hover:bg-stone-700 border-2 border-stone-700 hover:border-amber-500 p-5 rounded-xl text-center">
+              <span class="block text-3xl mb-1">👕</span>
+              <span class="block text-lg font-black text-amber-300 mb-1">不买</span>
+              <span class="text-xs text-stone-400">保持现代衣着</span>
+            </button>
+          </div>
+          <div class="text-[11px] text-stone-500">点击后将直接转交下一位玩家，全员选完统一公开结果！</div>
         </div>
       </div>
-      <button id="btnStartGamePlay" type="button" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-black py-4 rounded-xl shadow-xl transition text-base">
-        开启第 1 天市集 ➔
-      </button>
+
+      <!-- 阶段 3.5：换装结果 -->
+      <div id="secStep3Result" class="space-y-5 hidden">
+        <h2 class="text-xl font-black text-amber-400">【换装抉择结果公布】</h2>
+        <p class="text-xs text-stone-400">🎤 <span class="text-amber-300 font-bold">主持人念白：</span>“各位刚刚做出的选择，立刻在洛阳街头引发了连锁反应……”</p>
+        <div id="dressResultList" class="space-y-3 max-h-[340px] overflow-y-auto pr-1"></div>
+        <button id="btnDressFinish" type="button" class="w-full bg-amber-600 hover:bg-amber-500 text-white font-bold py-3.5 rounded-xl shadow-lg transition">
+          前往集市 · 揭晓发簪目标 ➔
+        </button>
+      </div>
+
+      <!-- 阶段 4：发簪目标 -->
+      <div id="secStep4" class="space-y-5 hidden">
+        <h2 class="text-2xl font-black text-amber-400">【核心任务：重返 2026】</h2>
+        <div class="bg-stone-950 p-5 rounded-xl border border-stone-800 space-y-3 text-stone-200 text-sm leading-relaxed">
+          <p>“你们在东市古玩行正中看到了那枚带大家穿越的发簪！”</p>
+          <p class="text-rose-400 font-black text-base">掌柜高呼：“实价 300 铜板，少一文都不卖！”</p>
+          <div class="p-3 bg-stone-900 rounded-lg border border-amber-900/50 text-xs space-y-1.5 text-stone-300">
+            <p><b class="text-amber-400">★ 获胜机制：</b> 各自为战，谁先赚够 <strong class="text-amber-300">300 铜板</strong> 买回发簪谁就回到2026！</p>
+            <p><b class="text-emerald-400">★ 卖艺救急：</b> 若手头缺钱，可选择【街头卖艺】赚取 4~7 铜钱，但当天疲惫无法再买卖货物！</p>
+            <p><b class="text-rose-400">★ 破产机制：</b> 铜板为 0 且无物资、无法翻盘时淘汰；若无现金可半价折现手上货物救急。</p>
+            <p><b class="text-amber-300">★ 轮流游玩：</b> <strong>第一天仅能买入进货或卖艺积攒底金</strong>，第二天起全线自由买卖、乞丐掷色子与大盘物价暴涨暴跌！</p>
+          </div>
+        </div>
+        <button id="btnEnterDay1" type="button" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-black py-4 rounded-xl shadow-xl transition text-base">
+          开启第 1 天 · 传递 iPad 进货 ➔
+        </button>
+      </div>
+
+      <!-- 清晨阶段 A：乞丐装玩家独立掷色子 -->
+      <div id="secMorningBeggar" class="space-y-5 hidden">
+        <h2 class="text-xl font-black text-amber-400">【清晨第一幕：好心人施舍】</h2>
+        <div class="bg-stone-950 p-4 rounded-xl border border-stone-800 text-xs text-stone-300">
+          🎤 乞丐装玩家破晓施舍时间！请乞丐玩家轮流上前，亲自掷下今日的运势色子：
+        </div>
+        <div id="beggarRollList" class="space-y-3"></div>
+        <button id="btnFinishBeggarRoll" type="button" class="w-full bg-amber-600 hover:bg-amber-500 text-white font-bold py-3.5 rounded-xl transition">
+          乞讨结算完毕 · 前往突发奇遇 ➔
+        </button>
+      </div>
+
+      <!-- 清晨阶段 B：全员面对同一个突发事件，轮流独立做选择 -->
+      <div id="secMorningSharedEvent" class="space-y-5 hidden">
+        <div class="flex justify-between items-center">
+          <h2 class="text-xl font-black text-amber-400">【清晨第二幕：今日全员突发奇遇】</h2>
+          <span id="sharedEventTurnTag" class="text-sm font-bold text-amber-300 px-3 py-1 bg-stone-800 rounded-lg border border-amber-600/40"></span>
+        </div>
+        
+        <div class="p-5 bg-stone-950 rounded-xl border border-stone-800 space-y-4">
+          <div class="flex items-center gap-2">
+            <span class="text-2xl">⚡</span>
+            <div id="todaySharedEventTitle" class="text-lg font-black text-amber-300"></div>
+          </div>
+          <p id="todaySharedEventDesc" class="text-sm text-stone-300 leading-relaxed"></p>
+          
+          <div id="sharedEventChoiceSection" class="space-y-2.5 pt-2">
+            <button onclick="pickSharedEventOption('A')" type="button" class="w-full text-left bg-stone-800 hover:bg-stone-700 p-3.5 rounded-xl border border-stone-700 active:scale-95 transition">
+              <span class="font-bold text-amber-400">选项 A：</span>
+              <span id="sharedEventOptA" class="text-sm"></span>
+            </button>
+            <button onclick="pickSharedEventOption('B')" type="button" class="w-full text-left bg-stone-800 hover:bg-stone-700 p-3.5 rounded-xl border border-stone-700 active:scale-95 transition">
+              <span class="font-bold text-amber-400">选项 B：</span>
+              <span id="sharedEventOptB" class="text-sm"></span>
+            </button>
+          </div>
+
+          <div id="sharedEventResultCard" class="hidden p-3 bg-stone-900 border border-amber-500/50 rounded-lg text-sm text-amber-200 leading-relaxed"></div>
+        </div>
+
+        <button id="btnNextSharedEventPlayer" type="button" class="hidden w-full bg-amber-600 hover:bg-amber-500 text-white font-bold py-3.5 rounded-xl transition">
+          传给下一位玩家做选择 ➔
+        </button>
+      </div>
+
+      <!-- 清晨阶段 C：今日天下大势（2个暴涨暴跌事件 + 1个下架） -->
+      <div id="secMorningMarketNews" class="space-y-5 hidden">
+        <h2 class="text-2xl font-black text-amber-400">【清晨第三幕：今日东汉时局与市集暴动】</h2>
+        <div class="bg-stone-950 p-4 rounded-xl border border-stone-800 text-xs text-stone-300 leading-relaxed">
+          🎤 <span class="text-amber-300 font-bold">主持人念白：</span>“天色大亮，城门鼓敲响，两则重磅消息引发市集价格剧烈动荡，同时官府发出了搜查禁令！”
+        </div>
+        <div id="marketNewsCards" class="space-y-3"></div>
+        <button id="btnEnterTradingPhase" type="button" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-black py-4 rounded-xl shadow-xl transition text-base">
+          传阅 iPad · 开始个人交易 ➔
+        </button>
+      </div>
+
     </div>
   </div>
 
-  <!-- ================= 主游戏大盘界面 ================= -->
-  <div id="gamePlaySection" class="hidden max-w-6xl mx-auto space-y-4">
-    <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-stone-900 p-4 rounded-xl border border-stone-800">
+  <!-- ================= iPad 轮流传阅交易主界面 ================= -->
+  <div id="gamePlaySection" class="hidden max-w-5xl mx-auto space-y-4">
+    
+    <!-- 顶部状态栏 -->
+    <header class="flex justify-between items-center bg-stone-900 p-4 rounded-2xl border border-stone-800">
       <div>
-        <h1 class="text-2xl font-black text-amber-500 tracking-wider">重返 2026 · 主持人控台</h1>
-        <p class="text-xs text-stone-400">目标：赚取 300 铜板买回发簪</p>
-      </div>
-      <div class="flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-end">
-        <div class="text-right">
-          <div class="text-xs text-stone-400">集市历法</div>
-          <div id="dayDisplay" class="text-2xl font-black text-amber-400">第 1 天</div>
+        <div class="flex items-center gap-2">
+          <h1 class="text-xl font-black text-amber-500">重返 2026 · 市集交易</h1>
+          <span id="todayBanBadge" class="text-xs px-2 py-0.5 rounded-full bg-rose-950 text-rose-300 border border-rose-800">今日禁售: 无</span>
         </div>
-        <button id="btnNextDay" type="button" class="bg-amber-600 hover:bg-amber-500 text-white font-bold py-2.5 px-5 rounded-lg transition">
-          结算进入下一天 ➔
-        </button>
+        <div id="turnOrderNotice" class="text-xs text-stone-400 mt-1"></div>
+      </div>
+      <div class="flex items-center gap-3">
+        <button onclick="toggleAudio()" id="mainBgmBtn" class="text-xs bg-stone-800 border border-stone-700 px-3 py-1.5 rounded-full text-amber-300">🎵 乐声: 关</button>
+        <div class="text-right">
+          <div class="text-[10px] text-stone-400">集市历法</div>
+          <div id="currentDayTag" class="text-xl font-black text-amber-400">第 1 天</div>
+        </div>
       </div>
     </header>
 
-    <main class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-      <!-- 玩家信息区 -->
-      <section class="lg:col-span-2 space-y-4">
-        <div class="bg-stone-900 p-4 rounded-xl border border-stone-800">
-          <div class="flex justify-between items-center mb-3">
-            <h2 class="text-lg font-bold text-amber-400">玩家资产状况</h2>
-            <span id="dayRuleText" class="text-xs text-amber-300/80 bg-amber-950/40 px-2.5 py-1 rounded border border-amber-800/40">
-              第 1 天：仅限买入建仓
-            </span>
-          </div>
-          <div id="playerCardContainer" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
+    <!-- 当前持机玩家横幅 -->
+    <div class="bg-gradient-to-r from-amber-950/80 via-stone-900 to-amber-950/80 border-2 border-amber-500/80 rounded-2xl p-4 shadow-lg flex flex-col md:flex-row justify-between items-center gap-3">
+      <div class="flex items-center gap-3">
+        <div class="w-12 h-12 rounded-full bg-amber-600 flex items-center justify-center text-xl font-black text-white shadow">
+          🎮
         </div>
-
-        <!-- 交易核算器 -->
-        <div class="bg-stone-900 p-4 rounded-xl border border-stone-800">
-          <h2 class="text-lg font-bold text-amber-400 mb-3">当面交易结算器</h2>
-          <div class="flex flex-wrap gap-2 items-center text-sm">
-            <select id="tradePlayerSelect" class="bg-stone-950 border border-stone-700 rounded p-2 text-amber-300"></select>
-            <select id="tradeTypeSelect" class="bg-stone-950 border border-stone-700 rounded p-2 text-stone-200">
-              <option value="buy">买入 (Buy)</option>
-              <option value="sell">卖出 (Sell)</option>
-            </select>
-            <select id="tradeItemSelect" class="bg-stone-950 border border-stone-700 rounded p-2 text-stone-200"></select>
-            <input id="tradeQtyInput" type="number" value="1" min="1" class="w-16 bg-stone-950 border border-stone-700 rounded p-2 text-center text-white" />
-            <span>件</span>
-            <button id="btnExecuteTrade" type="button" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-md font-bold transition">
-              确认交易
-            </button>
-            <button id="btnSalvage" type="button" class="bg-rose-900 hover:bg-rose-800 text-rose-200 px-3 py-2 rounded-md text-xs border border-rose-700">
-              破产半价收回全部
-            </button>
+        <div>
+          <div class="text-xs text-amber-400 font-bold uppercase tracking-wider">请将 iPad 递给该玩家操作：</div>
+          <div class="text-2xl font-black text-white flex items-center gap-2">
+            <span id="activePlayerName">玩家</span>
+            <span id="activePlayerRoleTag" class="text-xs font-normal px-2 py-0.5 rounded bg-stone-800 text-stone-300 border border-stone-700"></span>
           </div>
         </div>
-      </section>
-
-      <!-- 市场物价与奇遇事件 -->
-      <section class="space-y-4">
-        <div class="bg-stone-900 p-4 rounded-xl border border-stone-800">
-          <div class="flex justify-between items-center mb-2">
-            <h2 class="text-lg font-bold text-amber-400">今日集市行情</h2>
-            <span id="banBadge" class="text-xs bg-rose-950 text-rose-300 px-2 py-0.5 rounded-full border border-rose-800">今日禁售: 无</span>
-          </div>
-          <div id="marketPriceContainer" class="space-y-2"></div>
+      </div>
+      <div class="flex items-center gap-4">
+        <div class="text-right">
+          <span class="text-xs text-stone-400">手中铜钱</span>
+          <div class="text-3xl font-black text-amber-400" id="activePlayerCoins">0 <span class="text-xs">文</span></div>
         </div>
 
-        <div class="bg-stone-900 p-4 rounded-xl border border-stone-800 text-center">
-          <h2 class="text-lg font-bold text-amber-400 mb-1">每日专属奇遇</h2>
-          <p id="eventTips" class="text-xs text-stone-500 mb-3">第 1 天不可抽卡，第 2 天起开放</p>
-          <div class="flex justify-center gap-2">
-            <select id="eventPlayerSelect" class="bg-stone-950 border border-stone-700 rounded p-2 text-amber-300 text-sm"></select>
-            <button id="btnDrawEvent" type="button" disabled class="bg-stone-800 text-stone-600 font-bold px-4 py-2 rounded-lg text-sm cursor-not-allowed">
-              抽取奇遇 🎴
-            </button>
-          </div>
-        </div>
-      </section>
-    </main>
-  </div>
-
-  <!-- 奇遇弹窗 -->
-  <div id="eventModal" class="hidden fixed inset-0 bg-black/85 flex items-center justify-center p-4 z-50">
-    <div class="bg-stone-900 border-2 border-amber-500 rounded-2xl max-w-lg w-full p-6 text-stone-100 shadow-2xl">
-      <div id="modalPlayerTag" class="text-xs text-amber-400 font-bold uppercase mb-1"></div>
-      <h3 id="modalEventTitle" class="text-xl font-black text-amber-300 mb-2"></h3>
-      <p id="modalEventDesc" class="text-sm text-stone-300 mb-6 leading-relaxed"></p>
-      
-      <div class="space-y-3">
-        <button id="btnChoiceA" type="button" class="w-full text-left bg-stone-800 hover:bg-stone-700 p-3 rounded-xl border border-stone-700">
-          <span class="font-bold text-amber-400">选项 A：</span>
-          <span id="choiceAText" class="text-sm"></span>
-        </button>
-        <button id="btnChoiceB" type="button" class="w-full text-left bg-stone-800 hover:bg-stone-700 p-3 rounded-xl border border-stone-700">
-          <span class="font-bold text-amber-400">选项 B：</span>
-          <span id="choiceBText" class="text-sm"></span>
+        <!-- 动态流转按钮：非最后一人时显示【传给下一人】，最后一人时直接替换为【结束今天·进入下一天】 -->
+        <button id="btnTurnAction" onclick="handleTurnActionButton()" type="button" class="bg-amber-600 hover:bg-amber-500 text-white font-black px-5 py-3 rounded-xl shadow-md active:scale-95 transition text-sm">
+          完成行动 · 传给下一人 ➔
         </button>
       </div>
+    </div>
 
-      <div id="modalResultBox" class="hidden mt-4 p-3 bg-stone-950 border border-amber-500/50 rounded-lg text-sm text-amber-200"></div>
-      <button id="btnCloseModal" type="button" class="hidden mt-4 w-full bg-amber-600 text-white font-bold py-2 rounded-lg">
-        完成结算
+    <!-- 街头卖艺救急区 -->
+    <div id="buskingBox" class="p-3.5 bg-gradient-to-r from-emerald-950/40 via-stone-900 to-emerald-950/40 border border-emerald-700/60 rounded-2xl flex flex-col sm:flex-row justify-between items-center gap-3">
+      <div class="space-y-0.5 text-center sm:text-left">
+        <div class="flex items-center justify-center sm:justify-start gap-2">
+          <span class="text-lg">🎪</span>
+          <span class="text-sm font-black text-emerald-400">街头卖艺（打一套军体拳 / 秀一段现代舞）</span>
+        </div>
+        <p class="text-xs text-stone-400">
+          现金不够或想稳妥攒钱？当街表演才艺可获 <strong class="text-amber-300">4 ~ 7 铜板</strong> 打赏！<br class="hidden sm:inline" />
+          <span class="text-rose-400 font-semibold">【代价】：卖艺后消耗全部体力，今日不可再买卖任何货物！</span>
+        </p>
+      </div>
+      <button id="btnPerformBusking" onclick="doBusking()" type="button" class="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-500 text-white font-black px-5 py-2.5 rounded-xl shadow active:scale-95 transition text-xs whitespace-nowrap">
+        🥁 立即当街卖艺
       </button>
     </div>
+
+    <!-- 上半区：我的背包货物（直观卡牌，点击卖出） -->
+    <div class="bg-stone-900 p-4 rounded-2xl border border-stone-800 space-y-3">
+      <div class="flex justify-between items-center">
+        <h2 class="text-base font-black text-amber-400 flex items-center gap-1.5">
+          <span>🎒 我的随身背包货架</span>
+          <span class="text-xs font-normal text-stone-500">(点击直接卖出变现)</span>
+        </h2>
+        <span id="sellNotice" class="text-xs text-rose-400 font-bold"></span>
+      </div>
+      <div id="myBackpackGrid" class="grid grid-cols-2 sm:grid-cols-4 gap-3"></div>
+    </div>
+
+    <!-- 下半区：市集今日货架（直观卡牌，点击买入） -->
+    <div class="bg-stone-900 p-4 rounded-2xl border border-stone-800 space-y-3">
+      <div class="flex justify-between items-center">
+        <h2 class="text-base font-black text-amber-400 flex items-center gap-1.5">
+          <span>🏪 东汉今日市集大盘</span>
+          <span class="text-xs font-normal text-stone-500">(点击直接买入囤货)</span>
+        </h2>
+        <button onclick="emergencySalvage()" type="button" class="text-xs text-rose-400 hover:underline">
+          手头紧？点此半价变现背包救急
+        </button>
+      </div>
+      <div id="marketShopGrid" class="grid grid-cols-2 sm:grid-cols-4 gap-3"></div>
+    </div>
+
+    <!-- 底部：全员资产概览 -->
+    <div class="bg-stone-900/60 p-3 rounded-xl border border-stone-800">
+      <div class="text-xs font-bold text-stone-400 mb-2">📊 洛阳富豪榜（目标 300 文）：</div>
+      <div id="miniScoreboard" class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs"></div>
+    </div>
+
   </div>
 
   <script>
-    // 5个钱袋模板
+    // ================= 音效与古典雅乐生成系统 (Web Audio API) =================
+    // 无需外链MP3，在iPad本地即可直接生成真实的古风五音琴韵与铜钱叮当撞击声！
+    let audioCtx = null;
+    let isBgmPlaying = false;
+    let bgmTimer = null;
+
+    function getAudioContext() {
+      if (!audioCtx) {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        audioCtx = new AudioContext();
+      }
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+      return audioCtx;
+    }
+
+    // 播放清脆真实的铜钱碰撞/交易音效
+    function playCoinSound() {
+      try {
+        const ctx = getAudioContext();
+        const now = ctx.currentTime;
+        
+        // 两个高频泛音模拟金属撞击
+        [2400, 3200, 4800].forEach((freq, i) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = "sine";
+          osc.frequency.setValueAtTime(freq + (Math.random() * 200 - 100), now + i * 0.04);
+          
+          gain.gain.setValueAtTime(0.2, now + i * 0.04);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.04 + 0.25);
+
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(now + i * 0.04);
+          osc.stop(now + i * 0.04 + 0.25);
+        });
+      } catch (e) {}
+    }
+
+    // 古风悠扬五声音阶 (宫商角徵羽 D4, E4, F#4, A4, B4, D5, E5, F#5, A5)
+    const pentatonicNotes = [293.66, 329.63, 369.99, 440.00, 493.88, 587.33, 659.25, 739.99, 880.00];
+
+    function playGuzhengPluck(freq, time) {
+      if (!isBgmPlaying) return;
+      try {
+        const ctx = getAudioContext();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+
+        osc.type = "triangle";
+        osc.frequency.setValueAtTime(freq, time);
+
+        // 古筝拨弦 ADSR
+        gain.gain.setValueAtTime(0, time);
+        gain.gain.linearRampToValueAtTime(0.12, time + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.001, time + 1.6);
+
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        osc.start(time);
+        osc.stop(time + 1.6);
+      } catch (e) {}
+    }
+
+    function scheduleAncientMelody() {
+      if (!isBgmPlaying) return;
+      const ctx = getAudioContext();
+      const now = ctx.currentTime;
+      
+      // 随机弹出符合东汉意境的悠扬古风小调
+      const noteCount = 4;
+      for (let i = 0; i < noteCount; i++) {
+        const randomNote = pentatonicNotes[Math.floor(Math.random() * pentatonicNotes.length)];
+        playGuzhengPluck(randomNote, now + i * 0.6);
+      }
+
+      bgmTimer = setTimeout(scheduleAncientMelody, 2400);
+    }
+
+    function toggleAudio() {
+      getAudioContext();
+      isBgmPlaying = !isBgmPlaying;
+      
+      const label = isBgmPlaying ? "🎵 乐声: 开" : "🎵 乐声: 关";
+      const mBtn = document.getElementById("mainBgmBtn");
+      const modalBtn = document.getElementById("modalBgmBtn");
+      if (mBtn) mBtn.innerText = label;
+      if (modalBtn) modalBtn.innerText = label;
+
+      if (isBgmPlaying) {
+        scheduleAncientMelody();
+      } else {
+        if (bgmTimer) clearTimeout(bgmTimer);
+      }
+    }
+
+    // ================= 游戏数据与核心逻辑 =================
     const bagPresets = [
-      { id: 1, title: "破烂草绳钱袋", coins: 15, note: "袋口结着草绳，轻飘飘的" },
-      { id: 2, title: "平民粗麻钱袋", coins: 25, note: "洗得发白，有些许零碎铜钱" },
-      { id: 3, title: "客商厚皮袋", coins: 35, note: "针脚密实，有一定分量" },
-      { id: 4, title: "丝织绣纹荷包", coins: 45, note: "纹理精致，贵族贴身之物" },
-      { id: 5, title: "朱红硬木钱匣", coins: 50, note: "沉甸甸的，装满成色上好的铜板" }
+      { id: 1, title: "破漏的草绳布袋", coins: 25, note: "有些许磨损，但装着25枚沉甸甸的五铢钱" },
+      { id: 2, title: "平民粗麻钱袋", coins: 35, note: "平民防身积蓄，装有35文铜钱" },
+      { id: 3, title: "客商厚皮钱囊", coins: 45, note: "皮质结实，装有45文经商启动金" },
+      { id: 4, title: "丝织绣纹荷包", coins: 55, note: "富贵人家的随身荷包，足足55文" },
+      { id: 5, title: "朱红硬木钱匣", coins: 65, note: "成色上好的东汉铜板，足足65文！" }
     ];
 
-    // 8大货物基础配置
     const baseItems = [
-      { id: "millet", name: "小米", min: 1, max: 4, price: 2 },
-      { id: "dates", name: "枣", min: 2, max: 7, price: 4 },
-      { id: "salt", name: "粗盐", min: 4, max: 15, price: 8 },
-      { id: "chicken", name: "鸡", min: 6, max: 20, price: 12 },
-      { id: "wine", name: "米酒", min: 10, max: 35, price: 20 },
-      { id: "cloth", name: "麻布", min: 18, max: 60, price: 35 },
-      { id: "mirror", name: "铜镜", min: 30, max: 100, price: 60 },
-      { id: "silk", name: "丝绸", min: 40, max: 180, price: 100 }
+      { id: "millet", name: "小米", icon: "🌾", min: 1, max: 4, price: 2, changeNote: "" },
+      { id: "dates", name: "枣", icon: "🍒", min: 2, max: 7, price: 4, changeNote: "" },
+      { id: "salt", name: "粗盐", icon: "🧂", min: 4, max: 15, price: 8, changeNote: "" },
+      { id: "chicken", name: "鸡", icon: "🐓", min: 6, max: 20, price: 12, changeNote: "" },
+      { id: "wine", name: "米酒", icon: "🍶", min: 10, max: 35, price: 20, changeNote: "" },
+      { id: "cloth", name: "麻布", icon: "🧣", min: 18, max: 60, price: 35, changeNote: "" },
+      { id: "mirror", name: "铜镜", icon: "🪞", min: 30, max: 100, price: 60, changeNote: "" },
+      { id: "silk", name: "丝绸", icon: "👘", min: 40, max: 180, price: 100, changeNote: "" }
     ];
 
-    // 奇遇事件卡
-    const eventCards = [
+    const marketFluctuationPool = [
+      { text: "今年麻桑大丰收，麻布货源充沛，竞争力大跌30%！", itemId: "cloth", rate: -0.3, note: "大丰收 (-30%)" },
+      { text: "洛阳突发蝗灾旱情，粮食奇缺，【小米】价格疯涨 60%！", itemId: "millet", rate: 0.6, note: "旱灾缺粮 (+60%)" },
+      { text: "太后寿宴大摆七日，御膳房扫荡活禽，【鸡】身价暴涨 50%！", itemId: "chicken", rate: 0.5, note: "宫廷急采 (+50%)" },
+      { text: "西域商队走私大量青铜，铜器贬值，【铜镜】市价大跌 40%！", itemId: "mirror", rate: -0.4, note: "外货冲击 (-40%)" },
+      { text: "官府严厉整顿私盐，水路封锁，【粗盐】黑市价暴涨 80%！", itemId: "salt", rate: 0.8, note: "官府严打 (+80%)" },
+      { text: "江南丝织机技术革新，大量丝绢入市，【丝绸】价格下调 25%！", itemId: "silk", rate: -0.25, note: "产量激增 (-25%)" },
+      { text: "严冬突袭洛阳，百姓争相饮酒驱寒，【米酒】一坛难求上涨 45%！", itemId: "wine", rate: 0.45, note: "御寒需求 (+45%)" },
+      { text: "北方红枣丰产滞销，摊贩降价甩卖，【枣】暴跌 35%！", itemId: "dates", rate: -0.35, note: "丰产滞销 (-35%)" }
+    ];
+
+    // 全员共享突发事件池（全员遭遇同一事件，但每个人按顺序做各自抉择）
+    const sharedEventPool = [
       {
         title: "神秘穿越客与秦王忠臣",
-        desc: "暗巷里一个神情慌张的男人拉住你低呼：'你也是2026年来的？！我知道哪里有时空回溯阵法，带你一起走！跟我来吗？'",
-        optA: "跟他走",
-        optB: "不走",
+        desc: "集市暗巷里，一个狂躁男人拦在你们面前低吼：'你们也是2026年来的？！我知道哪里有时空回溯法阵，谁要跟我一起走？！'",
+        optA: "相信他，跟他走",
+        optB: "觉得有诈，拒绝离开",
         resolve: (choice, p) => {
           if (choice === 'A') {
             p.coins = Math.max(0, p.coins - 10);
-            return `你跟着他狂奔到荒郊。他刚要做法，突然仰天大吼：“秦王！臣马上可以回来效忠您了！”……原来是个疯子！你付了车夫 10 铜板车马费，连夜逃回集市。`;
+            return `${p.name} 跟着他一路狂奔到荒郊。他刚要做法，突然仰天长啸：“秦王！臣马上可以回来效忠您了！”……原来是个疯子！你付了车夫 10 铜板车马费才逃回集市。`;
           } else {
             p.coins += 10;
-            return `你谨慎拒绝。对方一愣，神智竟恢复清明：“没想到你如此清醒。我大限将至回不去了，这是我身上最后的 10 铜板，留给你防身，保重！”`;
+            return `${p.name} 谨慎拒绝。对方神智竟恢复清明：“没想到你如此清醒。我回不去了，这是我身上最后的 10 铜板，赠予同胞，保重！”`;
           }
         }
       },
       {
-        title: "巡夜官差查验",
-        desc: "手持长矛的东汉官差敲打着货架：“何方闲散人等？速速出示路引！”",
+        title: "尚方令蔡伦的新纸测试",
+        desc: "蔡伦改进的‘蔡侯纸’在集市秘密发售首批试验样品，摊主吆喝：'15文一张，童叟无欺，谁有胆识买来一试？'",
+        optA: "花 15 铜板买下一张试用",
+        optB: "嫌贵不买，继续用竹简",
+        resolve: (choice, p) => {
+          if (choice === 'A') {
+            if (p.coins < 15) return `${p.name} 囊中羞涩掏不出 15 铜板，摊主白了你一眼扬长而去。`;
+            p.coins -= 15;
+            if (Math.random() > 0.4) {
+              p.coins += 40;
+              return `${p.name} 在纸上写了一首回文诗，被路过的洛阳富贾以 40 铜板高价买走！净赚 25 文！`;
+            } else {
+              return `${p.name} 买到的纸质太脆，沾水化成一滩烂泥，15 铜板打了水漂！`;
+            }
+          } else {
+            return `${p.name} 稳扎稳打没买，旁边书摊老板觉得你懂行务实，送了你 2 铜板折头。`;
+          }
+        }
+      },
+      {
+        title: "大酒肆后厨急采活禽",
+        desc: "城中最大酒肆今晚有达官贵客包场，后厨急缺活禽上菜，掌柜焦急满街重金求购！",
+        optA: "交出身上的【鸡】支援后厨",
+        optB: "口述一套现代卤鸡烹饪配方",
+        resolve: (choice, p) => {
+          if (choice === 'A') {
+            if (p.inventory['chicken'] && p.inventory['chicken'] > 0) {
+              p.inventory['chicken']--;
+              p.coins += 35;
+              return `${p.name} 掏出大公鸡！掌柜如获至宝，直接以 35 铜板巨款买下！`;
+            }
+            return `${p.name} 背包里根本没有鸡，掌柜啐了一口拂袖而去。`;
+          } else {
+            p.coins += 12;
+            return `${p.name} 传授了独门香料卤煮法，掌柜试做后惊为天人，当场赏了 12 铜板！`;
+          }
+        }
+      },
+      {
+        title: "巡夜东汉差役突击盘查",
+        desc: "一队手持长矛的官兵当街戒严，长矛一横大喊：'官府缉拿要犯，闲杂人等报上名来！'",
         optA: "亮明行头如实自辩",
-        optB: "递出 5 铜板喝茶钱",
+        optB: "塞出 5 铜板打点差役",
         resolve: (choice, p) => {
           if (choice === 'A') {
             if (p.role === 'beggar') {
               p.coins += 2;
-              return `差役见你一身破烂乞丐装，捂着鼻子扔了 2 铜板：“臭要饭的别挡道！”`;
+              return `${p.name} 一身破烂乞丐装，差役嫌弃地捂着鼻子扔了 2 铜板让赶快滚开。`;
             } else if (p.role === 'normal') {
-              return `你穿着日常百姓服饰，举止得体，官差盘问两句便挥手放行，无事发生。`;
+              return `${p.name} 穿着百姓麻服对答如流，差役盘问两句挥手放行，安然无恙。`;
             } else {
               p.coins = Math.max(0, p.coins - 15);
-              return `你穿着现代装束，被官差当场认定为番邦异类，强行勒索罚款 15 铜板！`;
+              return `${p.name} 依然穿着现代服饰，差役认定为蛮夷细作，狠狠罚了 15 铜板才放人！`;
             }
           } else {
             p.coins = Math.max(0, p.coins - 5);
-            return `官差收了钱，低声提点你：“这几日粗盐盯得紧，少在大道上招摇。”`;
+            return `${p.name} 悄悄塞了 5 铜板，差役眉开眼笑：“兄弟懂事，今晚早点收摊。”`;
           }
         }
       }
@@ -274,56 +501,71 @@
     let players = [];
     let bagList = [];
     let curBagPickerIndex = 0;
+    let curDressPickerIndex = 0;
     let currentDay = 1;
     let bannedItemId = null;
-    let activeEventSession = null;
+    let morningNewsDrawn = [];
 
-    // 页面加载完成后统一绑定
+    // 共享事件状态
+    let todaySharedEvent = null;
+    let curSharedEventPlayerIndex = 0;
+
+    // iPad传阅当面操作指针
+    let curActivePlayerOrderIndex = 0;
+
     document.addEventListener("DOMContentLoaded", () => {
-      // 步骤 1 提交按钮
-      const btnSubmit = document.getElementById("btnSubmitPlayers");
-      btnSubmit.addEventListener("click", onPlayerSubmit);
-      document.getElementById("playerInput").addEventListener("keydown", (e) => {
-        if (e.key === "Enter") onPlayerSubmit();
+      document.getElementById("btnStartGame").addEventListener("click", onStartGame);
+      document.getElementById("inputNames").addEventListener("keydown", (e) => {
+        if (e.key === "Enter") onStartGame();
       });
 
-      // 步骤 2 下一位抽袋
-      document.getElementById("btnNextDraw").addEventListener("click", onNextBagDraw);
+      document.getElementById("btnNextBagDraw").addEventListener("click", onNextBagDraw);
 
-      // 步骤 3 确认换装
-      document.getElementById("btnConfirmDress").addEventListener("click", onConfirmDress);
-
-      // 步骤 3.5 前往步骤 4
-      document.getElementById("btnProceedToStep4").addEventListener("click", () => {
-        document.getElementById("step3ResultContainer").classList.add("hidden");
-        document.getElementById("step4Container").classList.remove("hidden");
-        document.getElementById("wizardStepTitle").innerText = "核心目标";
+      document.getElementById("btnDressFinish").addEventListener("click", () => {
+        document.getElementById("secStep3Result").classList.add("hidden");
+        document.getElementById("secStep4").classList.remove("hidden");
+        document.getElementById("modalStageTitle").innerText = "核心目标";
       });
 
-      // 步骤 4 开启第1天
-      document.getElementById("btnStartGamePlay").addEventListener("click", onStartDay1);
+      document.getElementById("btnEnterDay1").addEventListener("click", () => {
+        document.getElementById("flowModal").classList.add("hidden");
+        document.getElementById("gamePlaySection").classList.remove("hidden");
+        currentDay = 1;
+        curActivePlayerOrderIndex = 0;
+        resetDailyPlayerStates();
+        randomizeMarketPricesForDay(1);
+        renderActivePlayerTurnUI();
+      });
 
-      // 主盘逻辑按钮
-      document.getElementById("btnNextDay").addEventListener("click", onNextDayClick);
-      document.getElementById("btnExecuteTrade").addEventListener("click", onExecuteTrade);
-      document.getElementById("btnSalvage").addEventListener("click", onSalvage);
-      document.getElementById("btnDrawEvent").addEventListener("click", onDrawEventClick);
-
-      // 事件弹窗按钮
-      document.getElementById("btnChoiceA").addEventListener("click", () => resolveEventOption("A"));
-      document.getElementById("btnChoiceB").addEventListener("click", () => resolveEventOption("B"));
-      document.getElementById("btnCloseModal").addEventListener("click", () => {
-        document.getElementById("eventModal").classList.add("hidden");
-        activeEventSession = null;
+      document.getElementById("btnFinishBeggarRoll").addEventListener("click", startMorningSharedEventPhase);
+      document.getElementById("btnNextSharedEventPlayer").addEventListener("click", advanceSharedEventPlayer);
+      document.getElementById("btnEnterTradingPhase").addEventListener("click", () => {
+        document.getElementById("flowModal").classList.add("hidden");
+        curActivePlayerOrderIndex = 0;
+        resetDailyPlayerStates();
+        renderActivePlayerTurnUI();
       });
     });
 
-    // 步骤 1 提交名字
-    function onPlayerSubmit() {
-      const input = document.getElementById("playerInput").value.trim();
-      const names = input.split(/[,，、\s]+/).filter(Boolean);
+    function resetDailyPlayerStates() {
+      players.forEach(p => {
+        p.hasBuskedToday = false;
+      });
+    }
+
+    function getTodayTurnOrder() {
+      if (players.length === 0) return [];
+      const offset = (currentDay - 1) % players.length;
+      return [...players.slice(offset), ...players.slice(0, offset)];
+    }
+
+    // ================= 阶段 1：录入玩家与摸袋 =================
+    function onStartGame() {
+      getAudioContext();
+      const raw = document.getElementById("inputNames").value.trim();
+      const names = raw.split(/[,，、\s]+/).filter(Boolean);
       if (names.length === 0) {
-        alert("请至少输入 1 位玩家的名字！");
+        alert("请至少输入一位玩家名字！");
         return;
       }
 
@@ -332,27 +574,25 @@
         name: name,
         coins: 0,
         role: null,
-        chosenDress: null,
         bagInfo: null,
+        hasBuskedToday: false,
         inventory: {}
       }));
 
-      // 生成5个乱序钱袋
       bagList = [...bagPresets].sort(() => Math.random() - 0.5);
       bagList.forEach(b => b.owner = null);
       curBagPickerIndex = 0;
 
-      document.getElementById("step1Container").classList.add("hidden");
-      document.getElementById("step2Container").classList.remove("hidden");
-      document.getElementById("wizardStepTitle").innerText = "摸取钱袋";
+      document.getElementById("secStep1").classList.add("hidden");
+      document.getElementById("secStep2").classList.remove("hidden");
+      document.getElementById("modalStageTitle").innerText = "摸取钱袋";
       renderBagGrid();
     }
 
-    // 渲染5个钱袋卡片
     function renderBagGrid() {
       const curPlayer = players[curBagPickerIndex];
-      document.getElementById("turnIndicator").innerText = `请玩家：${curPlayer.name} 摸袋`;
-      document.getElementById("bagResultBox").classList.add("hidden");
+      document.getElementById("bagPickerTag").innerText = `轮到：${curPlayer.name} 点击`;
+      document.getElementById("bagRevealBox").classList.add("hidden");
 
       const grid = document.getElementById("bagCardGrid");
       grid.innerHTML = "";
@@ -363,16 +603,16 @@
           card.className = "bg-stone-950 border border-stone-800 opacity-40 p-4 rounded-xl text-center";
           card.innerHTML = `
             <div class="text-3xl mb-1">👝</div>
-            <div class="text-xs text-stone-500">已属于</div>
+            <div class="text-xs text-stone-500 font-bold">已属于</div>
             <div class="text-xs text-amber-500 font-bold">${bag.owner}</div>
             <div class="text-xs text-stone-600">(${bag.coins}文)</div>
           `;
         } else {
-          card.className = "bag-item bg-stone-800 hover:bg-stone-700 border-2 border-amber-600/70 p-4 rounded-xl text-center";
+          card.className = "interactive-card bg-stone-800 hover:bg-stone-700 border-2 border-amber-600/70 p-4 rounded-xl text-center cursor-pointer";
           card.innerHTML = `
             <div class="text-4xl mb-2">💰</div>
             <div class="text-sm font-black text-amber-300">钱袋 ${idx + 1}</div>
-            <div class="text-xs text-stone-400 mt-1">点击翻开</div>
+            <div class="text-xs text-stone-400 mt-1">点击摸取</div>
           `;
           card.addEventListener("click", () => pickBag(idx));
         }
@@ -380,8 +620,8 @@
       });
     }
 
-    // 点击翻开钱袋
     function pickBag(idx) {
+      playCoinSound();
       const curPlayer = players[curBagPickerIndex];
       const bag = bagList[idx];
       bag.owner = curPlayer.name;
@@ -390,323 +630,480 @@
 
       renderBagGrid();
 
-      const box = document.getElementById("bagResultBox");
-      const text = document.getElementById("bagResultText");
-      text.innerHTML = `🎉 <span class="text-white">${curPlayer.name}</span> 抽中了 <span class="text-amber-400 font-black">【${bag.title}】</span>，获得初始资金 <span class="text-emerald-400 font-black">${bag.coins} 铜板</span>！<br><span class="text-xs text-stone-400">${bag.note}</span>`;
+      const box = document.getElementById("bagRevealBox");
+      const text = document.getElementById("bagRevealText");
+      text.innerHTML = `🎉 <span class="text-white">${curPlayer.name}</span> 摸得 <span class="text-amber-400 font-black">【${bag.title}】</span>，获得初始资金 <span class="text-emerald-400 font-black">${bag.coins} 铜板</span>！<br><span class="text-xs text-stone-400">“${bag.note}”</span>`;
       box.classList.remove("hidden");
 
-      const nextBtn = document.getElementById("btnNextDraw");
+      const nextBtn = document.getElementById("btnNextBagDraw");
       if (curBagPickerIndex >= players.length - 1) {
-        nextBtn.innerText = "全员摸袋完成 · 进入衣着抉择 ➔";
+        nextBtn.innerText = "全员摸袋完成 · 依次挑选服饰 ➔";
       } else {
-        nextBtn.innerText = `下一位玩家摸袋 (${players[curBagPickerIndex + 1].name}) ➔`;
+        nextBtn.innerText = `下一位玩家抽袋 (${players[curBagPickerIndex + 1].name}) ➔`;
       }
     }
 
     function onNextBagDraw() {
       if (curBagPickerIndex >= players.length - 1) {
-        document.getElementById("step2Container").classList.add("hidden");
-        document.getElementById("step3Container").classList.remove("hidden");
-        document.getElementById("wizardStepTitle").innerText = "伪装换装";
-        renderDressUI();
+        document.getElementById("secStep2").classList.add("hidden");
+        document.getElementById("secStep3").classList.remove("hidden");
+        document.getElementById("modalStageTitle").innerText = "伪装换装";
+        curDressPickerIndex = 0;
+        updateDressTurnDisplay();
       } else {
         curBagPickerIndex++;
         renderBagGrid();
       }
     }
 
-    // 渲染衣着选项（完全隐藏剧透与后果）
-    function renderDressUI() {
-      const container = document.getElementById("dressList");
-      container.innerHTML = "";
-
-      players.forEach(p => {
-        const item = document.createElement("div");
-        item.className = "p-4 bg-stone-950 rounded-xl border border-stone-800 space-y-3";
-        item.innerHTML = `
-          <div class="flex justify-between items-center">
-            <div class="font-bold text-amber-400 text-base">${p.name}</div>
-            <div class="text-xs text-stone-300">手中铜钱: <b class="text-amber-300">${p.coins} 文</b></div>
-          </div>
-          <div class="text-xs text-stone-400">请该玩家决定购买哪种：</div>
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs pt-1">
-            <label class="cursor-pointer p-3 rounded-lg border border-stone-800 bg-stone-900 hover:border-amber-500/50 flex items-center gap-2">
-              <input type="radio" name="dress_${p.id}" value="beggar" class="accent-amber-500" />
-              <span class="font-bold text-stone-200 text-sm">乞丐装</span>
-            </label>
-            <label class="cursor-pointer p-3 rounded-lg border border-stone-800 bg-stone-900 hover:border-amber-500/50 flex items-center gap-2">
-              <input type="radio" name="dress_${p.id}" value="normal" class="accent-amber-500" />
-              <span class="font-bold text-stone-200 text-sm">日常服饰</span>
-            </label>
-            <label class="cursor-pointer p-3 rounded-lg border border-stone-800 bg-stone-900 hover:border-amber-500/50 flex items-center gap-2">
-              <input type="radio" name="dress_${p.id}" value="none" class="accent-amber-500" />
-              <span class="font-bold text-stone-200 text-sm">不买</span>
-            </label>
-          </div>
-        `;
-        item.querySelectorAll(`input[name="dress_${p.id}"]`).forEach(radio => {
-          radio.addEventListener("change", (e) => {
-            p.chosenDress = e.target.value;
-          });
-        });
-        container.appendChild(item);
-      });
+    function updateDressTurnDisplay() {
+      const curPlayer = players[curDressPickerIndex];
+      document.getElementById("dressPickerTag").innerText = `当前轮到：${curPlayer.name}`;
+      document.getElementById("dressPickerPrompt").innerHTML = `【${curPlayer.name}】请决定你要买一套什么：`;
     }
 
-    // 确认换装并展示真实结算剧本
-    function onConfirmDress() {
-      for (let p of players) {
-        if (!p.chosenDress) {
-          alert(`请先为【${p.name}】做出选择！`);
-          return;
-        }
+    function pickDressChoice(choiceKey) {
+      const curPlayer = players[curDressPickerIndex];
+      curPlayer.role = choiceKey;
+
+      if (curDressPickerIndex >= players.length - 1) {
+        revealAllDressResults();
+      } else {
+        curDressPickerIndex++;
+        updateDressTurnDisplay();
       }
+    }
 
-      const resultContainer = document.getElementById("dressResultList");
-      resultContainer.innerHTML = "";
+    function revealAllDressResults() {
+      document.getElementById("secStep3").classList.add("hidden");
+      document.getElementById("secStep3Result").classList.remove("hidden");
+      document.getElementById("modalStageTitle").innerText = "换装揭晓";
 
-      // 执行换装扣除并展示独立文本
+      const list = document.getElementById("dressResultList");
+      list.innerHTML = "";
+
       players.forEach(p => {
-        p.role = p.chosenDress;
-        let storyDesc = "";
-        let costDesc = "";
-
+        let story = "";
+        let deduct = "";
         if (p.role === "beggar") {
           p.coins = Math.max(0, p.coins - 1);
-          costDesc = "-1 铜板";
-          storyDesc = "我花了一个铜板买了乞丐装，穿上衣服居然每天都有好心人施舍我（每日开始前掷色子获得 1-6 个铜板）。";
+          deduct = "-1 铜板";
+          story = `我花了一个铜板买了乞丐装，穿上衣服居然每天都有好心人施舍我（每日开始前掷色子获得 1-6 个铜板）。`;
         } else if (p.role === "normal") {
           p.coins = Math.max(0, p.coins - 5);
-          costDesc = "-5 铜板";
-          storyDesc = "我花了5个铜板买了日常服饰，挺好的很合身。（无事发生）";
+          deduct = "-5 铜板";
+          story = `我花了 5 个铜板买了日常服饰，挺好的很合身。（无事发生）`;
         } else {
-          p.coins = Math.max(0, p.coins - 20);
-          costDesc = "-20 铜板";
-          storyDesc = "官府觉得我很可疑，把我抓了起来，给了 20 铜板才放了我。";
+          p.coins = Math.max(0, p.coins - 15);
+          deduct = "-15 铜板";
+          story = `官府觉得我很可疑，把我抓了起来，交了 15 铜板罚金才放了我。好在怀里还留了点碎银子！`;
         }
 
-        const resItem = document.createElement("div");
-        resItem.className = "p-4 bg-stone-950 rounded-xl border border-stone-800 space-y-1.5";
-        resItem.innerHTML = `
+        const item = document.createElement("div");
+        item.className = "p-4 bg-stone-950 rounded-xl border border-stone-800 space-y-1.5";
+        item.innerHTML = `
           <div class="flex justify-between items-center">
-            <span class="font-bold text-amber-400 text-sm">${p.name}</span>
-            <div class="text-xs">
-              <span class="text-rose-400 font-bold mr-2">${costDesc}</span>
-              <span class="text-stone-300">剩余: <b class="text-amber-300">${p.coins}文</b></span>
-            </div>
+            <span class="font-black text-amber-400 text-base">${p.name} <span class="text-xs text-stone-400 font-normal">(选择了${p.role==='beggar'?'乞丐装':(p.role==='normal'?'日常服饰':'不买')})</span></span>
+            <span class="text-xs text-rose-400 font-bold">${deduct} · 剩余: <b class="text-amber-300">${p.coins}文</b></span>
           </div>
-          <p class="text-xs text-stone-200 leading-relaxed">${storyDesc}</p>
+          <p class="text-xs text-stone-200 leading-relaxed">${story}</p>
         `;
-        resultContainer.appendChild(resItem);
+        list.appendChild(item);
       });
-
-      document.getElementById("step3Container").classList.add("hidden");
-      document.getElementById("step3ResultContainer").classList.remove("hidden");
-      document.getElementById("wizardStepTitle").innerText = "换装结算";
     }
 
-    function onStartDay1() {
-      document.getElementById("prologueSection").classList.add("hidden");
-      document.getElementById("gamePlaySection").classList.remove("hidden");
-      currentDay = 1;
-      refreshMarketPrices();
-      refreshMainUI();
-    }
-
-    // 市场物价刷新
-    function refreshMarketPrices() {
+    function randomizeMarketPricesForDay(day) {
       baseItems.forEach(item => {
         item.price = Math.floor(Math.random() * (item.max - item.min + 1)) + item.min;
+        item.changeNote = "";
       });
 
-      if (currentDay > 1) {
-        const rand = Math.floor(Math.random() * baseItems.length);
-        bannedItemId = baseItems[rand].id;
-        document.getElementById("banBadge").innerText = `今日禁售: ${baseItems[rand].name}`;
-      } else {
+      if (day === 1) {
         bannedItemId = null;
-        document.getElementById("banBadge").innerText = `今日禁售: 无`;
+        document.getElementById("todayBanBadge").innerText = "今日禁售: 无";
+        return [];
       }
+
+      const randBan = Math.floor(Math.random() * baseItems.length);
+      bannedItemId = baseItems[randBan].id;
+      document.getElementById("todayBanBadge").innerText = `今日禁售: ${baseItems[randBan].name}`;
+
+      const shuffledNews = [...marketFluctuationPool].sort(() => Math.random() - 0.5);
+      const drawnNews = shuffledNews.slice(0, 2);
+
+      drawnNews.forEach(news => {
+        const item = baseItems.find(i => i.id === news.itemId);
+        if (item) {
+          const oldPrice = item.price;
+          item.price = Math.max(1, Math.round(oldPrice * (1 + news.rate)));
+          item.changeNote = news.note;
+        }
+      });
+
+      return drawnNews;
     }
 
-    function refreshMainUI() {
-      document.getElementById("dayDisplay").innerText = `第 ${currentDay} 天`;
+    // ================= iPad 传阅轮流交易核心界面 =================
+    function renderActivePlayerTurnUI() {
+      const turnOrder = getTodayTurnOrder();
+      const activePlayer = turnOrder[curActivePlayerOrderIndex];
+      const isLastPlayer = (curActivePlayerOrderIndex === turnOrder.length - 1);
+
+      document.getElementById("currentDayTag").innerText = `第 ${currentDay} 天`;
+
+      const orderStr = turnOrder.map((p, idx) => {
+        return idx === curActivePlayerOrderIndex 
+          ? `<span class="text-amber-400 font-black underline underline-offset-2">${p.name}(操作中)</span>` 
+          : `<span class="text-stone-500">${p.name}</span>`;
+      }).join(" ➔ ");
+      document.getElementById("turnOrderNotice").innerHTML = `今日顺位：${orderStr}`;
+
+      document.getElementById("activePlayerName").innerText = activePlayer.name;
+      document.getElementById("activePlayerCoins").innerHTML = `${activePlayer.coins} <span class="text-xs font-normal">文</span>`;
+      
+      const roleName = activePlayer.role === 'beggar' ? '乞丐装(每日施舍)' : (activePlayer.role === 'none' ? '现代装(罚15文)' : '日常百姓服');
+      document.getElementById("activePlayerRoleTag").innerText = roleName;
+
+      // 核心调整：如果是当天最后一人，把按钮直接变为“进入下一天”，不出现“传给下一个人”和多余弹窗！
+      const btnAction = document.getElementById("btnTurnAction");
+      if (isLastPlayer) {
+        btnAction.innerText = "🎉 全员交易完毕 · 进入下一天 ➔";
+        btnAction.className = "bg-emerald-600 hover:bg-emerald-500 text-white font-black px-5 py-3 rounded-xl shadow-md active:scale-95 transition text-sm";
+      } else {
+        btnAction.innerText = "完成行动 · 传给下一人 ➔";
+        btnAction.className = "bg-amber-600 hover:bg-amber-500 text-white font-black px-5 py-3 rounded-xl shadow-md active:scale-95 transition text-sm";
+      }
 
       const isDay1 = currentDay === 1;
-      const ruleText = document.getElementById("dayRuleText");
-      const drawBtn = document.getElementById("btnDrawEvent");
-      const eventTips = document.getElementById("eventTips");
+      const isBusked = activePlayer.hasBuskedToday;
 
-      if (isDay1) {
-        ruleText.innerText = "第 1 天：刚入东汉，仅限买入建仓！";
-        drawBtn.disabled = true;
-        drawBtn.className = "bg-stone-800 text-stone-600 font-bold px-4 py-2 rounded-lg text-sm cursor-not-allowed";
-        eventTips.innerText = "第 1 天专注买入物资，第 2 天开启奇遇抽卡";
+      const btnBusking = document.getElementById("btnPerformBusking");
+      if (isBusked) {
+        btnBusking.disabled = true;
+        btnBusking.className = "w-full sm:w-auto bg-stone-800 text-stone-500 font-bold px-5 py-2.5 rounded-xl cursor-not-allowed text-xs";
+        btnBusking.innerText = "✓ 今日已卖艺打赏";
       } else {
-        ruleText.innerText = "第 2 天起：买卖全开，每日抽取奇遇";
-        drawBtn.disabled = false;
-        drawBtn.className = "bg-amber-600 hover:bg-amber-500 text-white font-bold px-4 py-2 rounded-lg text-sm active:scale-95 transition";
-        eventTips.innerText = "每日为各玩家轮流抽取 1 次个人奇遇";
+        btnBusking.disabled = false;
+        btnBusking.className = "w-full sm:w-auto bg-emerald-600 hover:bg-emerald-500 text-white font-black px-5 py-2.5 rounded-xl shadow active:scale-95 transition text-xs whitespace-nowrap";
+        btnBusking.innerText = "🥁 立即当街卖艺";
       }
 
-      // 渲染玩家资产卡
-      const pContainer = document.getElementById("playerCardContainer");
-      pContainer.innerHTML = players.map(p => {
-        const inventoryStr = Object.entries(p.inventory)
-          .filter(([_, q]) => q > 0)
-          .map(([id, q]) => `${baseItems.find(i => i.id === id)?.name || id}x${q}`)
-          .join(", ") || "空";
+      const sellNotice = document.getElementById("sellNotice");
+      if (isBusked) {
+        sellNotice.innerText = "【今日已卖艺】：疲惫不堪，今日锁定买卖！";
+      } else if (isDay1) {
+        sellNotice.innerText = "【第1天只进不出】：刚到洛阳无法摆摊卖出，只可买入建仓或卖艺！";
+      } else {
+        sellNotice.innerText = "";
+      }
 
-        const roleName = p.role === 'beggar' ? '乞丐装 (每日1-6文)' : (p.role === 'none' ? '不买 (被扣20文)' : '日常服');
+      // 背包货架
+      const backpackGrid = document.getElementById("myBackpackGrid");
+      backpackGrid.innerHTML = "";
 
-        return `
-          <div class="bg-stone-950 p-4 rounded-xl border ${p.coins >= 300 ? 'border-amber-400 bg-amber-950/30' : 'border-stone-800'}">
-            <div class="flex justify-between items-start mb-2">
-              <div>
-                <span class="font-bold text-stone-100 text-base">${p.name}</span>
-                <span class="text-xs text-amber-500/80 block">${p.bagInfo?.title || ''} · ${roleName}</span>
+      const myItems = Object.entries(activePlayer.inventory).filter(([_, qty]) => qty > 0);
+      if (myItems.length === 0) {
+        backpackGrid.innerHTML = `<div class="col-span-2 sm:col-span-4 p-6 text-center text-xs text-stone-500 bg-stone-950/40 rounded-xl border border-dashed border-stone-800">背包空空如也，手头紧可点击上方【街头卖艺】或在下方采购！</div>`;
+      } else {
+        myItems.forEach(([id, qty]) => {
+          const item = baseItems.find(i => i.id === id);
+          const isBanned = id === bannedItemId;
+          const card = document.createElement("div");
+          card.className = `p-3 rounded-xl border bg-stone-950 flex flex-col justify-between ${isBanned ? 'border-rose-700/60 opacity-60' : 'border-stone-800'}`;
+          card.innerHTML = `
+            <div>
+              <div class="flex justify-between items-center mb-1">
+                <span class="text-2xl">${item.icon}</span>
+                <span class="text-xs bg-amber-950 text-amber-300 font-bold px-2 py-0.5 rounded border border-amber-800/40">拥有 x${qty}</span>
               </div>
-              <span class="text-amber-400 font-black text-2xl">${p.coins} <span class="text-xs text-stone-400">文</span></span>
+              <div class="font-black text-sm text-stone-200">${item.name}</div>
+              <div class="text-xs text-stone-400 mt-1">今日可卖: <b class="${isBanned ? 'text-rose-400 line-through' : 'text-amber-400'}">${isBanned ? '官府查封' : item.price + ' 文'}</b></div>
             </div>
-            <div class="text-xs text-stone-400">持有物资: <span class="text-stone-200 font-medium">${inventoryStr}</span></div>
-            ${p.coins >= 300 ? '<div class="text-xs text-amber-300 font-bold mt-2 bg-amber-900/40 p-2 rounded border border-amber-500/40 animate-pulse">👑 已攒够 300 铜板！可买下发簪回到2026！</div>' : ''}
-          </div>
-        `;
-      }).join('');
+            <button onclick="sellOneItem('${id}')" ${isDay1 || isBanned || isBusked ? 'disabled' : ''} class="mt-3 w-full py-1.5 rounded-lg text-xs font-bold transition ${isDay1 || isBanned || isBusked ? 'bg-stone-800 text-stone-600 cursor-not-allowed' : 'bg-rose-900/80 hover:bg-rose-800 text-rose-200 active:scale-95 border border-rose-700'}">
+              ${isBusked ? '卖艺锁定' : (isDay1 ? '今日禁售' : (isBanned ? '查封禁售' : '卖出 1 件 ➔'))}
+            </button>
+          `;
+          backpackGrid.appendChild(card);
+        });
+      }
 
-      // 渲染市场价格
-      const mContainer = document.getElementById("marketPriceContainer");
-      mContainer.innerHTML = baseItems.map(item => {
+      // 市集货架
+      const shopGrid = document.getElementById("marketShopGrid");
+      shopGrid.innerHTML = "";
+
+      baseItems.forEach(item => {
         const isBanned = item.id === bannedItemId;
-        return `
-          <div class="flex justify-between items-center p-2.5 rounded-lg bg-stone-950 border ${isBanned ? 'border-rose-700 opacity-60' : 'border-stone-800'}">
-            <span class="font-medium text-sm ${isBanned ? 'line-through text-stone-500' : 'text-stone-200'}">${item.name}</span>
-            <span class="font-bold text-sm ${isBanned ? 'text-rose-400' : 'text-amber-400'}">${isBanned ? '官府查封' : item.price + ' 文'}</span>
+        const canAfford = activePlayer.coins >= item.price;
+        const card = document.createElement("div");
+        card.className = `p-3 rounded-xl border bg-stone-950 flex flex-col justify-between ${isBanned ? 'border-rose-900 opacity-60' : 'border-stone-800'}`;
+        card.innerHTML = `
+          <div>
+            <div class="flex justify-between items-start mb-1">
+              <span class="text-2xl">${item.icon}</span>
+              ${item.changeNote ? `<span class="text-[10px] bg-amber-950 text-amber-400 px-1.5 py-0.5 rounded border border-amber-800">${item.changeNote}</span>` : ''}
+            </div>
+            <div class="font-black text-sm text-stone-200">${item.name}</div>
+            <div class="text-xs text-stone-400 mt-1">市价: <b class="${isBanned ? 'text-rose-400' : 'text-amber-400'}">${isBanned ? '查封禁买' : item.price + ' 文'}</b></div>
           </div>
+          <button onclick="buyOneItem('${item.id}')" ${isBanned || !canAfford || isBusked ? 'disabled' : ''} class="mt-3 w-full py-1.5 rounded-lg text-xs font-bold transition ${isBanned ? 'bg-stone-800 text-stone-600 cursor-not-allowed' : (isBusked ? 'bg-stone-800 text-stone-600 cursor-not-allowed' : (!canAfford ? 'bg-stone-800 text-stone-500 cursor-not-allowed' : 'bg-emerald-700 hover:bg-emerald-600 text-white active:scale-95 shadow'))}">
+            ${isBanned ? '今日禁买' : (isBusked ? '卖艺锁定' : (!canAfford ? '铜钱不足' : '买入 1 件 🛒'))}
+          </button>
         `;
-      }).join('');
+        shopGrid.appendChild(card);
+      });
 
-      // 下拉框更新
-      const pSelect = document.getElementById("tradePlayerSelect");
-      const epSelect = document.getElementById("eventPlayerSelect");
-      const iSelect = document.getElementById("tradeItemSelect");
+      renderMiniScoreboard();
 
-      pSelect.innerHTML = players.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
-      epSelect.innerHTML = players.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
-      iSelect.innerHTML = baseItems.map(i => `<option value="${i.id}">${i.name} (${i.price}文)</option>`).join('');
+      if (activePlayer.coins >= 300) {
+        alert(`👑 天呐！【${activePlayer.name}】已攒足 ${activePlayer.coins} 铜板！成功买回东汉发簪，穿透时空重返 2026 年！游戏获胜！`);
+      }
     }
 
-    function onExecuteTrade() {
-      const pId = parseInt(document.getElementById("tradePlayerSelect").value);
-      const action = document.getElementById("tradeTypeSelect").value;
-      const itemId = document.getElementById("tradeItemSelect").value;
-      const qty = parseInt(document.getElementById("tradeQtyInput").value) || 1;
+    // 智能流转：到最后一人点击直接进入次日，不弹任何中断对话框！
+    function handleTurnActionButton() {
+      const turnOrder = getTodayTurnOrder();
+      if (curActivePlayerOrderIndex >= turnOrder.length - 1) {
+        startNextDayFlow();
+      } else {
+        curActivePlayerOrderIndex++;
+        renderActivePlayerTurnUI();
+      }
+    }
 
-      const player = players.find(p => p.id === pId);
+    function doBusking() {
+      const turnOrder = getTodayTurnOrder();
+      const p = turnOrder[curActivePlayerOrderIndex];
+
+      if (p.hasBuskedToday) return;
+
+      const reward = Math.floor(Math.random() * 4) + 4;
+      p.coins += reward;
+      p.hasBuskedToday = true;
+      playCoinSound();
+
+      const acts = [
+        "打了一套威风凛凛的现代军体拳",
+        "在桥头跳了一段太空步机械舞",
+        "扯开嗓门高唱了一曲流行金曲",
+        "表演了一段空手变扑克魔术"
+      ];
+      const act = acts[Math.floor(Math.random() * acts.length)];
+
+      alert(`🎪 卖艺大获成功！
+
+${p.name} 在东汉闹市【${act}】，引得百姓拍手叫好，打赏了 ${reward} 铜板！
+
+（今日体力已尽，锁定商品买卖）`);
+      renderActivePlayerTurnUI();
+    }
+
+    function buyOneItem(itemId) {
+      const turnOrder = getTodayTurnOrder();
+      const p = turnOrder[curActivePlayerOrderIndex];
       const item = baseItems.find(i => i.id === itemId);
 
-      if (currentDay === 1 && action === 'sell') {
-        alert("第 1 天只进不出！集市摊位尚未铺齐，无法卖出。请先买入建仓！");
-        return;
-      }
+      if (p.hasBuskedToday) return;
+      if (itemId === bannedItemId || p.coins < item.price) return;
 
-      if (itemId === bannedItemId) {
-        alert("该货物今日被官府查封禁止买卖！");
-        return;
-      }
-
-      const totalCost = item.price * qty;
-
-      if (action === 'buy') {
-        if (player.coins < totalCost) {
-          alert("铜钱不足，无法购入该数量的货物！");
-          return;
-        }
-        player.coins -= totalCost;
-        player.inventory[itemId] = (player.inventory[itemId] || 0) + qty;
-      } else {
-        const owned = player.inventory[itemId] || 0;
-        if (owned < qty) {
-          alert("该玩家手中没有足够的该货物！");
-          return;
-        }
-        player.coins += totalCost;
-        player.inventory[itemId] -= qty;
-      }
-
-      refreshMainUI();
+      playCoinSound();
+      p.coins -= item.price;
+      p.inventory[itemId] = (p.inventory[itemId] || 0) + 1;
+      renderActivePlayerTurnUI();
     }
 
-    function onSalvage() {
-      const pId = parseInt(document.getElementById("tradePlayerSelect").value);
-      const player = players.find(p => p.id === pId);
-      if (!confirm(`确定将 ${player.name} 手中所有货物以今日牌价半价强制回收救急？`)) return;
+    function sellOneItem(itemId) {
+      if (currentDay === 1) return;
+      const turnOrder = getTodayTurnOrder();
+      const p = turnOrder[curActivePlayerOrderIndex];
+      const item = baseItems.find(i => i.id === itemId);
+
+      if (p.hasBuskedToday || itemId === bannedItemId) return;
+      if (!p.inventory[itemId] || p.inventory[itemId] <= 0) return;
+
+      playCoinSound();
+      p.coins += item.price;
+      p.inventory[itemId]--;
+      renderActivePlayerTurnUI();
+    }
+
+    function emergencySalvage() {
+      const turnOrder = getTodayTurnOrder();
+      const p = turnOrder[curActivePlayerOrderIndex];
+      if (!confirm(`确认将【${p.name}】手中的全部物品以半价变现救急？`)) return;
 
       let gain = 0;
-      Object.entries(player.inventory).forEach(([itemId, qty]) => {
+      Object.entries(p.inventory).forEach(([itemId, qty]) => {
         const item = baseItems.find(i => i.id === itemId);
         gain += Math.floor((item.price * qty) / 2);
       });
-      player.inventory = {};
-      player.coins += gain;
-      alert(`已半价回收，${player.name} 获得救急资金 ${gain} 铜板。`);
-      refreshMainUI();
+      p.inventory = {};
+      p.coins += gain;
+      playCoinSound();
+      alert(`已半价变现，${p.name} 获得 ${gain} 铜钱。`);
+      renderActivePlayerTurnUI();
     }
 
-    function onNextDayClick() {
+    function renderMiniScoreboard() {
+      const el = document.getElementById("miniScoreboard");
+      el.innerHTML = players.map(p => {
+        const isCurrent = p.id === getTodayTurnOrder()[curActivePlayerOrderIndex]?.id;
+        return `
+          <div class="p-2 rounded-lg border ${isCurrent ? 'border-amber-500 bg-amber-950/40 font-bold' : 'border-stone-800 bg-stone-950'} flex justify-between items-center">
+            <span class="text-stone-300 truncate">${p.name} ${isCurrent ? '👈' : ''}</span>
+            <span class="text-amber-400 font-black">${p.coins}文</span>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // ================= 进入次日向导流 =================
+    function startNextDayFlow() {
       currentDay++;
-      let beggarLogs = [];
+      morningNewsDrawn = randomizeMarketPricesForDay(currentDay);
 
-      players.forEach(p => {
-        if (p.role === 'beggar') {
-          const roll = Math.floor(Math.random() * 6) + 1;
-          p.coins += roll;
-          beggarLogs.push(`${p.name} 乞讨得 +${roll}文`);
-        }
-      });
+      document.getElementById("flowModal").classList.remove("hidden");
+      document.getElementById("secStep1").classList.add("hidden");
+      document.getElementById("secStep2").classList.add("hidden");
+      document.getElementById("secStep3").classList.add("hidden");
+      document.getElementById("secStep3Result").classList.add("hidden");
+      document.getElementById("secStep4").classList.add("hidden");
+      document.getElementById("modalStageBadge").innerText = `第 ${currentDay} 天 · 清晨`;
 
-      refreshMarketPrices();
-      refreshMainUI();
-
-      let msg = `已进入第 ${currentDay} 天！市价已浮动。`;
-      if (beggarLogs.length > 0) {
-        msg += `\n\n乞丐装每日行乞结果：\n` + beggarLogs.join('\n');
+      const beggars = players.filter(p => p.role === "beggar");
+      if (beggars.length > 0) {
+        document.getElementById("secMorningBeggar").classList.remove("hidden");
+        document.getElementById("secMorningSharedEvent").classList.add("hidden");
+        document.getElementById("secMorningMarketNews").classList.add("hidden");
+        document.getElementById("modalStageTitle").innerText = "乞丐施舍掷骰";
+        renderBeggarDicePhase();
+      } else {
+        startMorningSharedEventPhase();
       }
-      alert(msg);
     }
 
-    function onDrawEventClick() {
-      const pId = parseInt(document.getElementById("eventPlayerSelect").value);
-      const player = players.find(p => p.id === pId);
-      const ev = eventCards[Math.floor(Math.random() * eventCards.length)];
-      activeEventSession = { event: ev, player: player };
+    function renderBeggarDicePhase() {
+      const beggars = players.filter(p => p.role === "beggar");
+      const list = document.getElementById("beggarRollList");
+      list.innerHTML = "";
 
-      document.getElementById("modalPlayerTag").innerText = `受试玩家：${player.name}`;
-      document.getElementById("modalEventTitle").innerText = ev.title;
-      document.getElementById("modalEventDesc").innerText = ev.desc;
-      document.getElementById("choiceAText").innerText = ev.optA;
-      document.getElementById("choiceBText").innerText = ev.optB;
-
-      document.getElementById("btnChoiceA").classList.remove("hidden");
-      document.getElementById("btnChoiceB").classList.remove("hidden");
-      document.getElementById("modalResultBox").classList.add("hidden");
-      document.getElementById("btnCloseModal").classList.add("hidden");
-
-      document.getElementById("eventModal").classList.remove("hidden");
+      beggars.forEach(b => {
+        const item = document.createElement("div");
+        item.className = "p-4 bg-stone-950 rounded-xl border border-stone-800 flex justify-between items-center";
+        item.id = `beggar_box_${b.id}`;
+        item.innerHTML = `
+          <div>
+            <span class="font-bold text-amber-400 text-base">${b.name}</span>
+            <span class="text-xs text-stone-400 ml-2">身份：乞丐装</span>
+          </div>
+          <button onclick="rollBeggarDice(${b.id})" id="btn_roll_${b.id}" class="bg-amber-600 hover:bg-amber-500 text-white font-bold px-4 py-2 rounded-lg text-sm transition active:scale-95">
+            🎲 亲自掷色子
+          </button>
+        `;
+        list.appendChild(item);
+      });
     }
 
-    function resolveEventOption(choice) {
-      const { event, player } = activeEventSession;
-      const resText = event.resolve(choice, player);
+    function rollBeggarDice(pId) {
+      playCoinSound();
+      const p = players.find(x => x.id === pId);
+      const roll = Math.floor(Math.random() * 6) + 1;
+      p.coins += roll;
 
-      document.getElementById("btnChoiceA").classList.add("hidden");
-      document.getElementById("btnChoiceB").classList.add("hidden");
+      const btn = document.getElementById(`btn_roll_${pId}`);
+      btn.outerHTML = `<span class="text-emerald-400 font-black text-sm bg-emerald-950/60 px-3 py-1.5 rounded border border-emerald-700">掷出 ${roll} 点！好心人施舍 +${roll} 文 (余额:${p.coins})</span>`;
+    }
 
-      const box = document.getElementById("modalResultBox");
-      box.innerText = resText;
-      box.classList.remove("hidden");
-      document.getElementById("btnCloseModal").classList.remove("hidden");
-      refreshMainUI();
+    // 清晨第二幕：全员共同遭遇同一突发事件，依次按今日顺位轮流选择
+    function startMorningSharedEventPhase() {
+      document.getElementById("secMorningBeggar").classList.add("hidden");
+      document.getElementById("secMorningSharedEvent").classList.remove("hidden");
+      document.getElementById("modalStageTitle").innerText = "今日全员突发奇遇";
+
+      // 抽取今天唯一的全员大事件
+      todaySharedEvent = sharedEventPool[Math.floor(Math.random() * sharedEventPool.length)];
+      curSharedEventPlayerIndex = 0;
+
+      document.getElementById("todaySharedEventTitle").innerText = todaySharedEvent.title;
+      document.getElementById("todaySharedEventDesc").innerText = todaySharedEvent.desc;
+      document.getElementById("sharedEventOptA").innerText = todaySharedEvent.optA;
+      document.getElementById("sharedEventOptB").innerText = todaySharedEvent.optB;
+
+      updateSharedEventPlayerPrompt();
+    }
+
+    function updateSharedEventPlayerPrompt() {
+      const turnOrder = getTodayTurnOrder();
+      const curPlayer = turnOrder[curSharedEventPlayerIndex];
+
+      document.getElementById("sharedEventTurnTag").innerText = `请玩家：${curPlayer.name} 做出抉择`;
+      document.getElementById("sharedEventChoiceSection").classList.remove("hidden");
+      document.getElementById("sharedEventResultCard").classList.add("hidden");
+      document.getElementById("btnNextSharedEventPlayer").classList.add("hidden");
+    }
+
+    function pickSharedEventOption(choice) {
+      const turnOrder = getTodayTurnOrder();
+      const curPlayer = turnOrder[curSharedEventPlayerIndex];
+      const resText = todaySharedEvent.resolve(choice, curPlayer);
+
+      playCoinSound();
+      const resCard = document.getElementById("sharedEventResultCard");
+      resCard.innerHTML = `<strong>【${curPlayer.name} 的抉择结局】</strong><br>${resText}`;
+      resCard.classList.remove("hidden");
+
+      document.getElementById("sharedEventChoiceSection").classList.add("hidden");
+      
+      const nextBtn = document.getElementById("btnNextSharedEventPlayer");
+      nextBtn.classList.remove("hidden");
+
+      if (curSharedEventPlayerIndex >= turnOrder.length - 1) {
+        nextBtn.innerText = "全员已处理此突发事件 · 查看今日大势 ➔";
+      } else {
+        nextBtn.innerText = `传给下一位玩家 (${turnOrder[curSharedEventPlayerIndex + 1].name}) 做抉择 ➔`;
+      }
+    }
+
+    function advanceSharedEventPlayer() {
+      const turnOrder = getTodayTurnOrder();
+      if (curSharedEventPlayerIndex >= turnOrder.length - 1) {
+        renderMarketNewsPhase();
+      } else {
+        curSharedEventPlayerIndex++;
+        updateSharedEventPlayerPrompt();
+      }
+    }
+
+    function renderMarketNewsPhase() {
+      document.getElementById("secMorningSharedEvent").classList.add("hidden");
+      document.getElementById("secMorningMarketNews").classList.remove("hidden");
+      document.getElementById("modalStageTitle").innerText = "大盘突发异动";
+
+      const bannedItem = baseItems.find(i => i.id === bannedItemId);
+      const container = document.getElementById("marketNewsCards");
+      container.innerHTML = `
+        <div class="p-4 bg-rose-950/60 border border-rose-700 rounded-xl space-y-1">
+          <div class="text-xs font-bold text-rose-400">🚨 今日官府封锁禁售通告</div>
+          <div class="text-sm font-black text-rose-200">【${bannedItem?.name}】今日遭严查，集市全部停售停买！</div>
+        </div>
+      `;
+
+      morningNewsDrawn.forEach(news => {
+        const item = baseItems.find(i => i.id === news.itemId);
+        const isUp = news.rate > 0;
+        const div = document.createElement("div");
+        div.className = `p-4 rounded-xl border ${isUp ? 'bg-amber-950/40 border-amber-600/70' : 'bg-blue-950/40 border-blue-700'}`;
+        div.innerHTML = `
+          <div class="flex justify-between items-center mb-1">
+            <span class="text-xs font-bold ${isUp ? 'text-amber-400' : 'text-blue-300'}">📰 行情异动</span>
+            <span class="text-xs font-bold px-2 py-0.5 rounded ${isUp ? 'bg-amber-600/30 text-amber-300' : 'bg-blue-600/30 text-blue-300'}">${news.note}</span>
+          </div>
+          <p class="text-sm font-medium text-stone-200">${news.text}</p>
+          <div class="text-xs text-stone-400 mt-2">
+            影响商品：<b class="text-stone-200">${item?.name}</b> · 今日挂牌价：<b class="${isUp ? 'text-amber-400' : 'text-blue-300'}">${item?.price} 文</b>
+          </div>
+        `;
+        container.appendChild(div);
+      });
     }
   </script>
 </body>
