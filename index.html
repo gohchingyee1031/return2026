@@ -98,7 +98,7 @@
         <span id="dressTurnIndicator" class="text-xs font-bold text-amber-300 bg-amber-950 px-3 py-1 rounded-full border border-amber-800"></span>
       </div>
       <div class="bg-stone-950 p-4 rounded-xl border border-stone-800 text-xs text-stone-300 leading-relaxed">
-        🎤 <span class="text-amber-300 font-bold">主持人念白：</span>“街上百姓看着你们奇装异服十分可疑，官差正巡视过来。各位需在手机上盲选一套衣服掩饰身份！”
+        🎤 <span class="text-amber-300 font-bold">主持人念白：</span>“街上百姓看着你们奇装异服十分可疑，官差正巡视过来。各位需在手机上做出衣服抉择掩饰身份！”
       </div>
 
       <div id="dressProgressList" class="space-y-3"></div>
@@ -129,7 +129,7 @@
         <div class="p-3 bg-stone-900 rounded-lg border border-amber-900/50 text-xs space-y-1.5 text-stone-300">
           <p><b class="text-amber-400">★ 获胜机制：</b> 各自为战，谁先赚够 <strong class="text-amber-300">300 铜板</strong> 买回发簪谁就回到2026！</p>
           <p><b class="text-rose-400 font-bold">★ 破产出局：</b> 若手中铜钱归 0 且没有任何货物抵押变现，直接判定破产，时空锚点断裂，永久淘汰！</p>
-          <p><b class="text-amber-300">★ 交易阶段：</b> <strong>第一天仅能买入进货</strong>，第二天起全线自由买卖、乞丐掷色子与大盘物价暴涨暴跌！</p>
+          <p><b class="text-amber-300">★ 交易阶段：</b> <strong>第一天仅能买入进货</strong>，第二天起全线自由买卖、乞丐掷色子与玩家轮流抽取大盘涨跌！</p>
         </div>
       </div>
       <button onclick="startDay1Market()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-black py-4 rounded-xl shadow-xl transition text-base">
@@ -138,17 +138,20 @@
     </div>
   </div>
 
-  <!-- ================= 清晨向导浮层 (乞丐掷骰 / 全员大事件 / 大盘新闻) ================= -->
+  <!-- ================= 清晨向导浮层 (乞丐掷骰 / 全员大事件 / 玩家抽涨跌) ================= -->
   <div id="morningOverlay" class="hidden fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4 overflow-y-auto">
     <div class="bg-stone-900 border-2 border-amber-600 max-w-2xl w-full p-6 rounded-2xl shadow-2xl space-y-5 my-auto">
       
       <!-- 乞丐掷骰子阶段 -->
       <div id="morningBeggarSection" class="space-y-4 hidden">
-        <h3 class="text-xl font-black text-amber-400">【清晨第一幕：好心人施舍】</h3>
-        <p class="text-xs text-stone-300">乞丐装玩家破晓施舍时间！请乞丐玩家在自己手机上掷骰：</p>
+        <div class="flex justify-between items-center border-b border-stone-800 pb-2">
+          <h3 class="text-xl font-black text-amber-400">【清晨第一幕：好心人施舍】</h3>
+          <span id="beggarRollProgressTag" class="text-xs bg-stone-800 text-stone-400 px-2.5 py-1 rounded-full">等待全员掷色子中</span>
+        </div>
+        <p class="text-xs text-stone-300">乞丐装玩家破晓施舍时间！请乞丐玩家在各自手机上按下【掷色子】：</p>
         <div id="hostBeggarList" class="space-y-2"></div>
-        <button onclick="proceedToMorningEvent()" class="w-full bg-amber-600 hover:bg-amber-500 text-white font-bold py-3 rounded-xl text-sm transition">
-          乞讨完毕 · 进入全员突发奇遇 ➔
+        <button id="btnProceedBeggarFinish" disabled onclick="proceedToMorningEvent()" class="w-full bg-stone-800 text-stone-600 font-bold py-3 rounded-xl text-sm transition cursor-not-allowed">
+          等待全部乞丐掷骰完成...
         </button>
       </div>
 
@@ -162,18 +165,24 @@
           <div id="hostEventTitle" class="text-base font-black text-amber-300"></div>
           <p id="hostEventDesc" class="text-xs text-stone-300 leading-relaxed"></p>
         </div>
-        <div id="hostEventResultsList" class="space-y-2 max-h-[200px] overflow-y-auto"></div>
-        <button id="btnProceedToMarketNews" onclick="proceedToMarketNews()" class="hidden w-full bg-amber-600 hover:bg-amber-500 text-white font-bold py-3 rounded-xl text-sm transition">
-          全员抉择完毕 · 查看今日市集行情 ➔
+        <div id="hostEventResultsList" class="space-y-2 max-h-[220px] overflow-y-auto"></div>
+        <button id="btnProceedToMarketNews" onclick="proceedToMarketTrendDraw()" class="hidden w-full bg-amber-600 hover:bg-amber-500 text-white font-bold py-3 rounded-xl text-sm transition">
+          全员抉择完毕 · 轮流抽取今日大盘异动 ➔
         </button>
       </div>
 
-      <!-- 大盘新闻与下架 -->
-      <div id="morningNewsSection" class="space-y-4 hidden">
-        <h3 class="text-xl font-black text-amber-400">【清晨第三幕：今日东汉时局与市集暴动】</h3>
-        <div id="hostMarketNewsCards" class="space-y-3"></div>
-        <button onclick="closeMorningAndOpenTrading()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-black py-3.5 rounded-xl text-sm transition">
-          集市开盘 · 手机端自由交易 ➔
+      <!-- 玩家轮流抽取大盘随机事件（涨跌） -->
+      <div id="morningMarketDrawSection" class="space-y-4 hidden">
+        <div class="flex justify-between items-center border-b border-stone-800 pb-2">
+          <h3 class="text-xl font-black text-amber-400">【清晨第三幕：玩家轮流抽取大盘风云】</h3>
+          <span id="marketDrawTurnTag" class="text-xs text-amber-300 bg-amber-950 px-3 py-1 rounded-full border border-amber-800"></span>
+        </div>
+        <p class="text-xs text-stone-400">今日由玩家轮流在手机上抽取 1 个大盘涨跌时局签！影响今日市价！</p>
+        
+        <div id="hostDrawnTrendsList" class="space-y-2.5 max-h-[200px] overflow-y-auto"></div>
+
+        <button id="btnFinishMarketDrawAndTrade" onclick="closeMorningAndOpenTrading()" class="hidden w-full bg-emerald-600 hover:bg-emerald-500 text-white font-black py-3.5 rounded-xl text-sm transition">
+          全城价格已定 · 开盘自由交易 ➔
         </button>
       </div>
 
@@ -224,7 +233,7 @@
     let supabaseClient = null;
     let roomChannel = null;
 
-    // 状态机: LOBBY -> BAG_DRAW -> DRESS_CHOICE -> DRESS_REVEAL -> GOAL_INTRO -> PLAYING
+    // 状态机: LOBBY -> BAG_DRAW -> DRESS_CHOICE -> DRESS_REVEAL -> GOAL_INTRO -> PLAYING -> MORNING_BEGGAR -> MORNING_EVENT -> MORNING_MARKET_DRAW
     let gameState = "LOBBY";
     let currentDay = 1;
     let bannedItemId = null;
@@ -327,7 +336,8 @@
 
     let todaySharedEvent = null;
     let curSharedEventPlayerIndex = 0;
-    let morningNewsDrawn = [];
+    let curMarketDrawPlayerIndex = 0;
+    let drawnMarketTrends = [];
 
     // ================= 音效系统 =================
     let audioCtx = null;
@@ -421,6 +431,8 @@
                 coins: 0,
                 role: null,
                 isBankrupt: false,
+                hasRolledBeggarToday: false,
+                hasSubmittedEventToday: false,
                 inventory: {}
               });
               renderLobby();
@@ -438,6 +450,9 @@
           })
           .on('broadcast', { event: 'PLAYER_EVENT_CHOICE' }, ({ payload }) => {
             handleEventChoice(payload.playerName, payload.choice);
+          })
+          .on('broadcast', { event: 'PLAYER_DRAW_MARKET_TREND' }, ({ payload }) => {
+            handleMarketTrendDraw(payload.playerName);
           })
           .on('broadcast', { event: 'PLAYER_BUY' }, ({ payload }) => {
             handleBuy(payload.playerName, payload.itemId);
@@ -466,6 +481,8 @@
         curTurnPlayerName = activePlayers[curDressPickerIndex].name;
       } else if (gameState === "MORNING_EVENT" && activePlayers[curSharedEventPlayerIndex]) {
         curTurnPlayerName = activePlayers[curSharedEventPlayerIndex].name;
+      } else if (gameState === "MORNING_MARKET_DRAW" && activePlayers[curMarketDrawPlayerIndex]) {
+        curTurnPlayerName = activePlayers[curMarketDrawPlayerIndex].name;
       }
 
       roomChannel.send({
@@ -478,6 +495,7 @@
           activePlayerName: curTurnPlayerName,
           bagList,
           todaySharedEvent,
+          drawnMarketTrends,
           marketItems: baseItems,
           players
         }
@@ -686,7 +704,6 @@
     function renderMainGame() {
       document.getElementById('dayDisplay').innerText = `第 ${currentDay} 天`;
 
-      // 渲染主玩家列表
       const pContainer = document.getElementById('mainPlayerList');
       pContainer.innerHTML = players.map(p => {
         const invStr = Object.entries(p.inventory)
@@ -713,7 +730,6 @@
         `;
       }).join('');
 
-      // 渲染市场牌价
       const mContainer = document.getElementById('marketList');
       mContainer.innerHTML = baseItems.map(item => {
         const isBanned = item.id === bannedItemId;
@@ -757,8 +773,24 @@
       p.coins += item.price;
       p.inventory[itemId]--;
       setLog(`玩家【${pName}】卖出 1 件【${item.name}】(+${item.price}文)`);
+
+      // 破产保护检查
+      checkPlayerBankruptcy(p);
+
       renderMainGame();
       broadcastState();
+    }
+
+    function checkPlayerBankruptcy(player) {
+      if (player.isBankrupt) return true;
+      const totalItems = Object.values(player.inventory).reduce((sum, q) => sum + (q || 0), 0);
+      if (player.coins <= 0 && totalItems === 0) {
+        player.isBankrupt = true;
+        player.coins = 0;
+        alert(`💥 警报！【${player.name}】手中铜钱归零且无货物可抵，正式宣告破产出局！`);
+        return true;
+      }
+      return false;
     }
 
     function randomizeMarket() {
@@ -777,55 +809,75 @@
       }
     }
 
-    // ================= 清晨结算向导 =================
+    // ================= 清晨结算流程 =================
     function startNextDayFlow() {
       currentDay++;
       randomizeMarket();
 
-      // 抽取大盘异动新闻
-      const shuffledNews = [...marketFluctuationPool].sort(() => Math.random() - 0.5);
-      morningNewsDrawn = shuffledNews.slice(0, 2);
-      morningNewsDrawn.forEach(news => {
-        const item = baseItems.find(i => i.id === news.itemId);
-        if (item) {
-          item.price = Math.max(1, Math.round(item.price * (1 + news.rate)));
-          item.changeNote = news.note;
-        }
+      // 重置每位玩家每日状态
+      players.forEach(p => {
+        p.hasRolledBeggarToday = false;
+        p.hasSubmittedEventToday = false;
       });
+      drawnMarketTrends = [];
 
-      const activeBeggars = players.filter(p => !p.isBankrupt && p.role === "beggar");
       document.getElementById('morningOverlay').classList.remove('hidden');
 
+      const activeBeggars = players.filter(p => !p.isBankrupt && p.role === "beggar");
       if (activeBeggars.length > 0) {
         gameState = "MORNING_BEGGAR";
         document.getElementById('morningBeggarSection').classList.remove('hidden');
         document.getElementById('morningEventSection').classList.add('hidden');
-        document.getElementById('morningNewsSection').classList.add('hidden');
+        document.getElementById('morningMarketDrawSection').classList.add('hidden');
 
-        document.getElementById('hostBeggarList').innerHTML = activeBeggars.map(b => `
-          <div class="p-3 bg-stone-950 border border-stone-800 rounded-xl flex justify-between items-center">
-            <span class="font-bold text-amber-400">${b.name}</span>
-            <span id="beggarStatus_${b.name}" class="text-xs text-stone-400">等待在手机上掷骰...</span>
-          </div>
-        `).join('');
+        updateHostBeggarList();
       } else {
         proceedToMorningEvent();
       }
       broadcastState();
     }
 
+    function updateHostBeggarList() {
+      const activeBeggars = players.filter(p => !p.isBankrupt && p.role === "beggar");
+      const list = document.getElementById('hostBeggarList');
+      const allRolled = activeBeggars.every(b => b.hasRolledBeggarToday);
+
+      list.innerHTML = activeBeggars.map(b => `
+        <div class="p-3 bg-stone-950 border border-stone-800 rounded-xl flex justify-between items-center">
+          <span class="font-bold text-amber-400">${b.name}</span>
+          <span class="text-xs ${b.hasRolledBeggarToday ? 'text-emerald-400 font-bold' : 'text-stone-400'}">
+            ${b.hasRolledBeggarToday ? '✓ 已投掷完成' : '等待在手机上掷骰...'}
+          </span>
+        </div>
+      `).join('');
+
+      const finishBtn = document.getElementById('btnProceedBeggarFinish');
+      const tag = document.getElementById('beggarRollProgressTag');
+      if (allRolled) {
+        finishBtn.disabled = false;
+        finishBtn.className = "w-full bg-amber-600 hover:bg-amber-500 text-white font-bold py-3 rounded-xl text-sm transition cursor-pointer shadow active:scale-95";
+        finishBtn.innerText = "全部乞丐已掷骰完毕 · 进入突发大事件 ➔";
+        tag.innerText = "✓ 全员已就绪";
+        tag.className = "text-xs bg-emerald-950 text-emerald-300 border border-emerald-700 px-2.5 py-1 rounded-full font-bold";
+      } else {
+        finishBtn.disabled = true;
+        finishBtn.className = "w-full bg-stone-800 text-stone-600 font-bold py-3 rounded-xl text-sm transition cursor-not-allowed";
+        finishBtn.innerText = "等待全部乞丐掷骰完成...";
+        tag.innerText = "等待掷骰中...";
+        tag.className = "text-xs bg-stone-800 text-stone-400 px-2.5 py-1 rounded-full";
+      }
+    }
+
     function handleBeggarDiceRoll(pName) {
       const p = players.find(x => x.name === pName);
-      if (!p) return;
+      if (!p || p.hasRolledBeggarToday) return;
 
       playCoinSound();
       const roll = Math.floor(Math.random() * 6) + 1;
       p.coins += roll;
+      p.hasRolledBeggarToday = true;
 
-      const el = document.getElementById(`beggarStatus_${pName}`);
-      if (el) {
-        el.innerHTML = `<span class="text-emerald-400 font-bold">掷得 ${roll} 点！施舍 +${roll} 文</span>`;
-      }
+      updateHostBeggarList();
       broadcastState();
     }
 
@@ -840,6 +892,7 @@
       document.getElementById('hostEventTitle').innerText = todaySharedEvent.title;
       document.getElementById('hostEventDesc').innerText = todaySharedEvent.desc;
       document.getElementById('hostEventResultsList').innerHTML = "";
+      document.getElementById('btnProceedToMarketNews').classList.add('hidden');
 
       updateHostEventPrompt();
       broadcastState();
@@ -856,10 +909,11 @@
     function handleEventChoice(pName, choice) {
       const activePlayers = players.filter(p => !p.isBankrupt);
       const curP = activePlayers[curSharedEventPlayerIndex];
-      if (!curP || curP.name !== pName) return;
+      if (!curP || curP.name !== pName || curP.hasSubmittedEventToday) return;
 
       playCoinSound();
       const resText = todaySharedEvent.resolve(choice, curP);
+      curP.hasSubmittedEventToday = true;
 
       const list = document.getElementById('hostEventResultsList');
       const div = document.createElement('div');
@@ -867,8 +921,11 @@
       div.innerHTML = `<div class="font-bold text-amber-300">【${curP.name}】抉择结果：</div><p class="text-stone-300">${resText}</p>`;
       list.appendChild(div);
 
+      checkPlayerBankruptcy(curP);
+
       if (curSharedEventPlayerIndex >= activePlayers.length - 1) {
         document.getElementById('btnProceedToMarketNews').classList.remove('hidden');
+        document.getElementById('hostEventTurnTag').innerText = "✓ 全员已完成抉择";
       } else {
         curSharedEventPlayerIndex++;
         updateHostEventPrompt();
@@ -876,35 +933,72 @@
       broadcastState();
     }
 
-    function proceedToMarketNews() {
-      gameState = "MORNING_NEWS";
+    // ================= 玩家轮流抽取大盘涨跌事件 =================
+    function proceedToMarketTrendDraw() {
+      gameState = "MORNING_MARKET_DRAW";
       document.getElementById('morningEventSection').classList.add('hidden');
-      document.getElementById('morningNewsSection').classList.remove('hidden');
+      document.getElementById('morningMarketDrawSection').classList.remove('hidden');
 
-      const bannedItem = baseItems.find(i => i.id === bannedItemId);
-      const container = document.getElementById('hostMarketNewsCards');
-      container.innerHTML = `
-        <div class="p-3 bg-rose-950/60 border border-rose-700 rounded-xl space-y-0.5">
-          <div class="text-[11px] font-bold text-rose-400">🚨 今日官府封锁禁售通告</div>
-          <div class="text-xs font-black text-rose-200">【${bannedItem?.name}】今日遭严查，集市全部停售停买！</div>
-        </div>
-      `;
+      curMarketDrawPlayerIndex = 0;
+      drawnMarketTrends = [];
+      document.getElementById('hostDrawnTrendsList').innerHTML = "";
+      document.getElementById('btnFinishMarketDrawAndTrade').classList.add('hidden');
 
-      morningNewsDrawn.forEach(news => {
-        const item = baseItems.find(i => i.id === news.itemId);
-        const isUp = news.rate > 0;
-        const div = document.createElement("div");
-        div.className = `p-3 rounded-xl border ${isUp ? 'bg-amber-950/40 border-amber-600/70' : 'bg-blue-950/40 border-blue-700'} space-y-0.5`;
-        div.innerHTML = `
-          <div class="flex justify-between items-center">
-            <span class="text-xs font-bold ${isUp ? 'text-amber-400' : 'text-blue-300'}">📰 行情异动</span>
-            <span class="text-[10px] px-1.5 py-0.5 rounded ${isUp ? 'bg-amber-600/30 text-amber-300' : 'bg-blue-600/30 text-blue-300'}">${news.note}</span>
-          </div>
-          <p class="text-xs text-stone-200">${news.text}</p>
-        `;
-        container.appendChild(div);
+      updateMarketDrawPrompt();
+      broadcastState();
+    }
+
+    function updateMarketDrawPrompt() {
+      const activePlayers = players.filter(p => !p.isBankrupt);
+      const curP = activePlayers[curMarketDrawPlayerIndex];
+      if (curP) {
+        document.getElementById('marketDrawTurnTag').innerText = `请【${curP.name}】在手机上抽取时局签`;
+      }
+    }
+
+    function handleMarketTrendDraw(pName) {
+      const activePlayers = players.filter(p => !p.isBankrupt);
+      const curP = activePlayers[curMarketDrawPlayerIndex];
+      if (!curP || curP.name !== pName) return;
+
+      playCoinSound();
+
+      // 抽取一个尚未被抽取的时局事件
+      const unusedTrends = marketFluctuationPool.filter(t => !drawnMarketTrends.some(d => d.text === t.text));
+      const chosenTrend = unusedTrends[Math.floor(Math.random() * unusedTrends.length)] || marketFluctuationPool[0];
+
+      // 应用价格变动
+      const item = baseItems.find(i => i.id === chosenTrend.itemId);
+      if (item) {
+        item.price = Math.max(1, Math.round(item.price * (1 + chosenTrend.rate)));
+        item.changeNote = chosenTrend.note;
+      }
+
+      drawnMarketTrends.push({
+        drawer: curP.name,
+        trend: chosenTrend
       });
 
+      const list = document.getElementById('hostDrawnTrendsList');
+      const div = document.createElement('div');
+      div.className = "p-3 bg-stone-950 border border-stone-800 rounded-xl space-y-1 text-xs";
+      div.innerHTML = `
+        <div class="flex justify-between items-center">
+          <span class="text-amber-400 font-bold">【${curP.name}】抽中时局：</span>
+          <span class="text-[10px] px-2 py-0.5 rounded bg-amber-950 text-amber-300 font-bold border border-amber-800">${chosenTrend.note}</span>
+        </div>
+        <p class="text-stone-300">${chosenTrend.text}</p>
+      `;
+      list.appendChild(div);
+
+      // 最多抽 2 次（或全员抽完）
+      if (curMarketDrawPlayerIndex >= Math.min(activePlayers.length - 1, 1)) {
+        document.getElementById('btnFinishMarketDrawAndTrade').classList.remove('hidden');
+        document.getElementById('marketDrawTurnTag').innerText = "✓ 今日市价动荡已定";
+      } else {
+        curMarketDrawPlayerIndex++;
+        updateMarketDrawPrompt();
+      }
       broadcastState();
     }
 
