@@ -129,7 +129,7 @@
         <div class="p-3 bg-stone-900 rounded-lg border border-amber-900/50 text-xs space-y-1.5 text-stone-300">
           <p><b class="text-amber-400">★ 获胜机制：</b> 各自为战，谁先赚够 <strong class="text-amber-300">300 铜板</strong> 买回发簪谁就回到2026！</p>
           <p><b class="text-rose-400 font-bold">★ 破产出局：</b> 若手中铜钱归 0 且没有任何货物抵押变现，直接判定破产，时空锚点断裂，永久淘汰！</p>
-          <p><b class="text-amber-300">★ 交易阶段：</b> <strong>第一天仅能买入进货</strong>，次日起全线解禁卖出，每天轮流由两人抽取 2 个不重复时局/突发事件！</p>
+          <p><b class="text-amber-300">★ 交易阶段：</b> <strong>第一天仅能买入进货</strong>，第二天起全线解禁卖出，每天轮流由两人抽取 2 个不重复时局/突发事件！</p>
         </div>
       </div>
       <button onclick="startDay1Market()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-black py-4 rounded-xl shadow-xl transition text-base">
@@ -138,8 +138,36 @@
     </div>
   </div>
 
+  <!-- ================= 胜利结算决策弹窗 (>= 300 铜钱) ================= -->
+  <div id="victoryDecisionModal" class="hidden fixed inset-0 bg-black/95 z-50 flex items-center justify-center p-4 overflow-y-auto">
+    <div class="bg-gradient-to-b from-amber-950/90 via-stone-900 to-stone-950 border-2 border-amber-400 max-w-lg w-full p-6 md:p-8 rounded-3xl shadow-2xl text-center space-y-5 my-auto">
+      <div class="text-6xl animate-bounce">👑</div>
+      <h2 class="text-2xl md:text-3xl font-black text-amber-300">【时空破晓 · 重返 2026】</h2>
+      
+      <div id="victoryWinnersList" class="p-4 bg-stone-950 rounded-2xl border border-amber-500/40 text-stone-200 space-y-2"></div>
+      
+      <p class="text-xs text-stone-300 leading-relaxed">
+        古玩掌柜躬身奉上通体温润的古雅发簪，时空裂隙在身侧剧烈共鸣！<br>
+        <span class="text-amber-400 font-bold">资金达成 300 铜板买簪壮举，获得穿透时空重返 2026 的胜利资格！</span>
+      </p>
+
+      <div class="p-3 bg-stone-900/80 rounded-xl border border-stone-800 text-xs text-stone-400">
+        请房主主持人定夺当前战局走向：
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+        <button onclick="continueGameAfterVictory()" type="button" class="bg-stone-800 hover:bg-stone-700 text-amber-300 font-bold py-3 px-4 rounded-xl text-xs sm:text-sm border border-stone-700 transition active:scale-95 shadow">
+          继续游戏 (角逐次席/富甲天下) ➔
+        </button>
+        <button onclick="endGameAndReturnLobby()" type="button" class="bg-amber-600 hover:bg-amber-500 text-white font-black py-3 px-4 rounded-xl text-xs sm:text-sm transition active:scale-95 shadow">
+          终结对局 · 重回等待大厅 🏆
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- ================= 清晨向导浮层 (乞丐掷骰 / 每日轮流抽2签) ================= -->
-  <div id="morningOverlay" class="hidden fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4 overflow-y-auto">
+  <div id="morningOverlay" class="hidden fixed inset-0 bg-black/90 z-40 flex items-center justify-center p-4 overflow-y-auto">
     <div class="bg-stone-900 border-2 border-amber-600 max-w-2xl w-full p-6 rounded-2xl shadow-2xl space-y-5 my-auto">
       
       <!-- 乞丐掷骰子阶段 -->
@@ -255,6 +283,7 @@
     let currentDay = 1;
     let bannedItemId = null;
     let players = [];
+    let hasIgnoredVictory = false; // 主持人选择继续游戏后不再打扰
 
     // 多样化开局主题
     const prologueThemes = [
@@ -325,7 +354,7 @@
       { id: "silk", name: "丝绸", icon: "👘", min: 40, max: 180, price: 100, changeNote: "" }
     ];
 
-    // 30+ 独立不重复气运总牌堆 (突发与大盘混合)
+    // 30+ 独立不重复气运总牌堆 (统一定义 title, desc, text，彻底避免 undefined)
     const masterEventDeck = [
       {
         id: "pe_work",
@@ -554,25 +583,25 @@
         }
       },
 
-      // 大盘物价事件
-      { id: "me_cloth_harvest", type: "market", title: "中原麻桑大丰收", itemId: "cloth", rate: -0.3, note: "大丰收 (-30%)", desc: "麻桑大丰收，麻布货源充沛，全城牌价大跌 30%！" },
-      { id: "me_millet_drought", type: "market", title: "洛阳旱灾蝗灾突袭", itemId: "millet", rate: 0.6, note: "旱灾缺粮 (+60%)", desc: "久旱少雨平民抢粮，【小米】挂牌价疯涨 60%！" },
-      { id: "me_chicken_banquet", type: "market", title: "太后千秋大摆华筵", itemId: "chicken", rate: 0.5, note: "宫廷急采 (+50%)", desc: "御膳房大举溢价采购，活【鸡】身价暴涨 50%！" },
-      { id: "me_mirror_bronze", type: "market", title: "西域商队倾销铜器", itemId: "mirror", rate: -0.4, note: "外货冲击 (-40%)", desc: "西域青铜涌入洛阳，【铜镜】市价暴跌 40%！" },
-      { id: "me_salt_crackdown", type: "market", title: "官府雷霆整肃私盐", itemId: "salt", rate: 0.8, note: "官府严打 (+80%)", desc: "水陆缉私查封盐船，【粗盐】黑市价暴涨 80%！" },
-      { id: "me_silk_machine", type: "market", title: "江南新式织机传世", itemId: "silk", rate: -0.25, note: "产量激增 (-25%)", desc: "提花织机产出翻倍，【丝绸】价格下调 25%！" },
-      { id: "me_wine_cold", type: "market", title: "塞外暴风雪突袭洛阳", itemId: "wine", rate: 0.45, note: "御寒需求 (+45%)", desc: "百姓争购烈酒驱寒，【米酒】一坛难求上涨 45%！" },
-      { id: "me_dates_dump", type: "market", title: "北方红枣积压滞销", itemId: "dates", rate: -0.35, note: "丰产滞销 (-35%)", desc: "黄河岸边红枣堆积甩卖，【枣】牌价暴跌 35%！" },
-      { id: "me_salt_army", type: "market", title: "边关大军腌肉备饷", itemId: "salt", rate: 0.5, note: "军需征调 (+50%)", desc: "官兵采办食盐腌肉，【粗盐】价格飙涨 50%！" },
-      { id: "me_silk_imperial", type: "market", title: "和帝下旨禁奢倡俭", itemId: "silk", rate: -0.35, note: "圣旨节俭 (-35%)", desc: "公卿不敢穿绫罗，【丝绸】行市大跌 35%！" },
-      { id: "me_wine_contest", type: "market", title: "西市名楼九日斗酒", itemId: "wine", rate: 0.7, note: "斗酒狂欢 (+70%)", desc: "名商豪饮抢酒，【米酒】市价狂飙 70%！" },
-      { id: "me_mirror_glass", type: "market", title: "西域琉璃透镜风靡", itemId: "mirror", rate: -0.45, note: "琉璃冲击 (-45%)", desc: "千金争购琉璃，老旧【铜镜】遇冷暴跌 45%！" },
-      { id: "me_millet_tax_free", type: "market", title: "官仓平价赈济放粮", itemId: "millet", rate: -0.3, note: "常平仓赈济 (-30%)", desc: "官府开仓赈民平抑物价，【小米】回落 30%！" },
-      { id: "me_chicken_plague", type: "market", title: "近郊禽瘟走地鸡减产", itemId: "chicken", rate: 0.65, note: "货源骤减 (+65%)", desc: "城郊活禽奇缺，【鸡】价猛涨 65%！" },
-      { id: "me_dates_medicine", type: "market", title: "医圣新方广配枣药", itemId: "dates", rate: 0.55, note: "药铺抢购 (+55%)", desc: "各大生药铺重金收枣，【枣】售价飙升 55%！" },
-      { id: "me_cloth_tomb", type: "market", title: "豪门大举置办厚葬", itemId: "cloth", rate: 0.4, note: "厚葬需求 (+40%)", desc: "贵戚丧礼订购寿布，【麻布】紧俏上涨 40%！" },
-      { id: "me_salt_road", type: "market", title: "太行山运盐古道贯通", itemId: "salt", rate: -0.35, note: "运费大降 (-35%)", desc: "盐池新运道通车运费减半，【粗盐】回落 35%！" },
-      { id: "me_silk_tribute", type: "market", title: "西域车队洛阳大扫货", itemId: "silk", rate: 0.45, note: "丝路抢购 (+45%)", desc: "西域商团狂扫中原锦缎，【丝绸】牌价暴涨 45%！" }
+      // 大盘物价事件 (统一提供 text 和 desc)
+      { id: "me_cloth_harvest", type: "market", title: "中原麻桑大丰收", itemId: "cloth", rate: -0.3, note: "大丰收 (-30%)", text: "中原麻桑大获丰收，麻布货源充沛，全城牌价大跌 30%！", desc: "麻桑大丰收，麻布货源充沛，全城牌价大跌 30%！" },
+      { id: "me_millet_drought", type: "market", title: "洛阳旱灾蝗灾突袭", itemId: "millet", rate: 0.6, note: "旱灾缺粮 (+60%)", text: "久旱少雨平民抢粮，【小米】挂牌价疯涨 60%！", desc: "久旱少雨平民抢粮，【小米】挂牌价疯涨 60%！" },
+      { id: "me_chicken_banquet", type: "market", title: "太后千秋大摆华筵", itemId: "chicken", rate: 0.5, note: "宫廷急采 (+50%)", text: "御膳房大举溢价采购，活【鸡】身价暴涨 50%！", desc: "御膳房大举溢价采购，活【鸡】身价暴涨 50%！" },
+      { id: "me_mirror_bronze", type: "market", title: "西域商队倾销铜器", itemId: "mirror", rate: -0.4, note: "外货冲击 (-40%)", text: "西域青铜涌入洛阳，【铜镜】市价暴跌 40%！", desc: "西域青铜涌入洛阳，【铜镜】市价暴跌 40%！" },
+      { id: "me_salt_crackdown", type: "market", title: "官府雷霆整肃私盐", itemId: "salt", rate: 0.8, note: "官府严打 (+80%)", text: "水陆缉私查封盐船，【粗盐】黑市价暴涨 80%！", desc: "水陆缉私查封盐船，【粗盐】黑市价暴涨 80%！" },
+      { id: "me_silk_machine", type: "market", title: "江南新式织机传世", itemId: "silk", rate: -0.25, note: "产量激增 (-25%)", text: "提花织机产出翻倍，【丝绸】价格下调 25%！", desc: "提花织机产出翻倍，【丝绸】价格下调 25%！" },
+      { id: "me_wine_cold", type: "market", title: "塞外暴风雪突袭洛阳", itemId: "wine", rate: 0.45, note: "御寒需求 (+45%)", text: "百姓争购烈酒驱寒，【米酒】一坛难求上涨 45%！", desc: "百姓争购烈酒驱寒，【米酒】一坛难求上涨 45%！" },
+      { id: "me_dates_dump", type: "market", title: "北方红枣积压滞销", itemId: "dates", rate: -0.35, note: "丰产滞销 (-35%)", text: "黄河岸边红枣堆积甩卖，【枣】牌价暴跌 35%！", desc: "黄河岸边红枣堆积甩卖，【枣】牌价暴跌 35%！" },
+      { id: "me_salt_army", type: "market", title: "边关大军腌肉备饷", itemId: "salt", rate: 0.5, note: "军需征调 (+50%)", text: "官兵采办食盐腌肉，【粗盐】价格飙涨 50%！", desc: "官兵采办食盐腌肉，【粗盐】价格飙涨 50%！" },
+      { id: "me_silk_imperial", type: "market", title: "和帝下旨禁奢倡俭", itemId: "silk", rate: -0.35, note: "圣旨节俭 (-35%)", text: "公卿不敢穿绫罗，【丝绸】行市大跌 35%！", desc: "公卿不敢穿绫罗，【丝绸】行市大跌 35%！" },
+      { id: "me_wine_contest", type: "market", title: "西市名楼九日斗酒", itemId: "wine", rate: 0.7, note: "斗酒狂欢 (+70%)", text: "名商豪饮抢酒，【米酒】市价狂飙 70%！", desc: "名商豪饮抢酒，【米酒】市价狂飙 70%！" },
+      { id: "me_mirror_glass", type: "market", title: "西域琉璃透镜风靡", itemId: "mirror", rate: -0.45, note: "琉璃冲击 (-45%)", text: "千金争购琉璃，老旧【铜镜】遇冷暴跌 45%！", desc: "千金争购琉璃，老旧【铜镜】遇冷暴跌 45%！" },
+      { id: "me_millet_tax_free", type: "market", title: "官仓平价赈济放粮", itemId: "millet", rate: -0.3, note: "常平仓赈济 (-30%)", text: "官府开仓赈民平抑物价，【小米】牌价回落 30%！", desc: "官府开仓赈民平抑物价，【小米】牌价回落 30%！" },
+      { id: "me_chicken_plague", type: "market", title: "近郊禽瘟走地鸡减产", itemId: "chicken", rate: 0.65, note: "货源骤减 (+65%)", text: "城郊活禽奇缺，走地【鸡】价猛涨 65%！", desc: "城郊活禽奇缺，走地【鸡】价猛涨 65%！" },
+      { id: "me_dates_medicine", type: "market", title: "医圣新方广配枣药", itemId: "dates", rate: 0.55, note: "药铺抢购 (+55%)", text: "各大生药铺重金收枣，【枣】售价飙升 55%！", desc: "各大生药铺重金收枣，【枣】售价飙升 55%！" },
+      { id: "me_cloth_tomb", type: "market", title: "豪门大举置办厚葬", itemId: "cloth", rate: 0.4, note: "厚葬需求 (+40%)", text: "贵戚丧礼订购寿布，【麻布】紧俏上涨 40%！", desc: "贵戚丧礼订购寿布，【麻布】紧俏上涨 40%！" },
+      { id: "me_salt_road", type: "market", title: "太行山运盐古道贯通", itemId: "salt", rate: -0.35, note: "运费大降 (-35%)", text: "盐池新运道通车运费减半，【粗盐】售价回落 35%！", desc: "盐池新运道通车运费减半，【粗盐】售价回落 35%！" },
+      { id: "me_silk_tribute", type: "market", title: "西域车队洛阳大扫货", itemId: "silk", rate: 0.45, note: "丝路抢购 (+45%)", text: "西域商团狂扫中原锦缎，【丝绸】牌价暴涨 45%！", desc: "西域商团狂扫中原锦缎，【丝绸】牌价暴涨 45%！" }
     ];
 
     let activeDeck = [];
@@ -614,6 +643,27 @@
           gain.connect(ctx.destination);
           osc.start(now + i * 0.04);
           osc.stop(now + i * 0.04 + 0.25);
+        });
+      } catch (e) {}
+    }
+
+    // 胜利号角与喜庆音效
+    function playVictoryFanfare() {
+      try {
+        const ctx = getAudioContext();
+        const now = ctx.currentTime;
+        const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+        notes.forEach((freq, idx) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = "triangle";
+          osc.frequency.setValueAtTime(freq, now + idx * 0.16);
+          gain.gain.setValueAtTime(0.25, now + idx * 0.16);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.16 + 0.8);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(now + idx * 0.16);
+          osc.stop(now + idx * 0.16 + 0.8);
         });
       } catch (e) {}
     }
@@ -738,7 +788,6 @@
       } else if (gameState === "PROLOGUE_CHOICE" && activePlayers[curProloguePickerIndex]) {
         curTurnPlayerName = activePlayers[curProloguePickerIndex].name;
       } else if (gameState === "MORNING_EVENT_DRAW") {
-        // 如果当前抽中的是突发事件，且在让全员轮流选择
         if (currentEventForDraw && currentEventForDraw.type === "personal" && personalEventSubQueue[curPersonalSubIndex]) {
           curTurnPlayerName = personalEventSubQueue[curPersonalSubIndex].name;
         } else if (dailyDrawnDrawers[curEventDrawIndex]) {
@@ -986,12 +1035,12 @@
             </div>
             <div class="text-xs text-stone-400">背包持有: <span class="text-stone-200 font-medium">${invStr}</span></div>
             <div class="mt-2 text-right">
-              <span class="text-[11px] px-2 py-0.5 rounded ${p.hasConfirmedTradeToday ? 'bg-emerald-950 text-emerald-300 font-bold border border-emerald-800' : 'bg-stone-900 text-stone-500'}">
+              <span class="text-[11px] px-2 py-0.5 rounded ${p.hasConfirmedTradeToday ? 'bg-emerald-950 text-emerald-300 font-bold border border-emerald-700' : 'bg-stone-900 text-stone-500'}">
                 ${p.hasConfirmedTradeToday ? '✓ 手机端已确认完成' : '交易进行中...'}
               </span>
             </div>
             ${p.isBankrupt ? '<div class="text-xs text-rose-500 font-bold mt-1">💥 已宣告破产出局</div>' : ''}
-            ${isWinner ? '<div class="text-xs text-amber-300 font-bold mt-1 animate-pulse">👑 已赚满 300 铜板！买下发簪重返 2026 年！</div>' : ''}
+            ${isWinner ? '<div class="text-xs text-amber-300 font-bold mt-1 animate-pulse">👑 达成 300 铜板！买下发簪重返 2026 年！</div>' : ''}
           </div>
         `;
       }).join('');
@@ -1108,8 +1157,67 @@
       }
     }
 
+    // ================= 终局胜利检测机制 (>= 300 铜板) =================
+    function checkVictoryOnSettlement() {
+      if (hasIgnoredVictory) return false;
+      const winners = players.filter(p => !p.isBankrupt && p.coins >= 300);
+      if (winners.length > 0) {
+        showVictoryModal(winners);
+        return true;
+      }
+      return false;
+    }
+
+    function showVictoryModal(winners) {
+      playVictoryFanfare();
+      const modal = document.getElementById('victoryDecisionModal');
+      const list = document.getElementById('victoryWinnersList');
+
+      list.innerHTML = winners.map(w => `
+        <div class="flex justify-between items-center p-3 bg-stone-900 rounded-xl border border-amber-500/50">
+          <span class="font-black text-amber-300 text-base">👑 胜者：${w.name}</span>
+          <span class="text-emerald-400 font-black text-xl">${w.coins} <span class="text-xs">文</span></span>
+        </div>
+      `).join('');
+
+      modal.classList.remove('hidden');
+
+      // 广播胜利状态给手机端
+      gameState = "VICTORY";
+      broadcastState();
+    }
+
+    function continueGameAfterVictory() {
+      hasIgnoredVictory = true;
+      document.getElementById('victoryDecisionModal').classList.add('hidden');
+      proceedToNextDayFlowAfterCheck();
+    }
+
+    function endGameAndReturnLobby() {
+      document.getElementById('victoryDecisionModal').classList.add('hidden');
+      document.getElementById('viewPlaying').classList.add('hidden');
+      document.getElementById('morningOverlay').classList.add('hidden');
+      document.getElementById('viewLobby').classList.remove('hidden');
+      
+      gameState = "LOBBY";
+      hasIgnoredVictory = false;
+      currentDay = 1;
+      players = [];
+      renderLobby();
+      broadcastState();
+    }
+
     // ================= 清晨结算向导 =================
     function startNextDayFlow() {
+      // 1. 优先检查是否有人在上一轮攒足 300 文！
+      if (checkVictoryOnSettlement()) {
+        return; // 暂停流程，等待主持人决定“继续游戏”或“终结对局”
+      }
+
+      proceedToNextDayFlowAfterCheck();
+    }
+
+    function proceedToNextDayFlowAfterCheck() {
       currentDay++;
       randomizeMarket();
 
@@ -1183,7 +1291,7 @@
       broadcastState();
     }
 
-    // ================= 清晨第二幕：轮流抽取 2 个不重复事件 (突发事件全员轮流选并统一大屏揭晓) =================
+    // ================= 清晨第二幕：轮流抽取 2 个不重复事件 =================
     function startMixedEventDrawPhase() {
       gameState = "MORNING_EVENT_DRAW";
       document.getElementById('morningBeggarSection').classList.add('hidden');
@@ -1192,7 +1300,7 @@
       const turnOrder = getTodayTurnOrder();
       dailyDrawnDrawers = [];
 
-      // 如果人数 > 2，每天轮流由 2 个人来抽；如果 1~2 人，则按现有活跃人数抽
+      // 若人数 > 2，轮流两人抽；否则按现有活跃人数
       if (turnOrder.length > 2) {
         const offset = (currentDay - 2) * 2;
         dailyDrawnDrawers.push(turnOrder[offset % turnOrder.length]);
@@ -1221,7 +1329,6 @@
       const drawer = dailyDrawnDrawers[curEventDrawIndex];
       if (!drawer || drawer.name !== pName) return;
 
-      // 从不重复牌堆中抽出 1 张
       if (activeDeck.length === 0) {
         activeDeck = [...masterEventDeck].sort(() => Math.random() - 0.5);
       }
@@ -1231,7 +1338,9 @@
 
       document.getElementById('hostCurrentEventCard').classList.remove('hidden');
       document.getElementById('hostEventTitle').innerText = currentEventForDraw.title;
-      document.getElementById('hostEventDesc').innerText = currentEventForDraw.desc;
+      // 修复 undefined：优先读取 desc，如无读取 text
+      const eventTextContent = currentEventForDraw.desc || currentEventForDraw.text || "";
+      document.getElementById('hostEventDesc').innerText = eventTextContent;
 
       const badge = document.getElementById('hostEventBadge');
       const progressBox = document.getElementById('hostPersonalEventProgressBox');
@@ -1248,14 +1357,14 @@
         progressBox.classList.remove('hidden');
         btn.classList.add('hidden');
 
-        // 核心规则：突发事件触发全员轮流做选择！
+        // 突发事件触发全员轮流做选择！
         personalEventSubQueue = getTodayTurnOrder();
         curPersonalSubIndex = 0;
         personalEventSubRecords = [];
 
         updatePersonalSubProgress();
       } else {
-        // 大盘物价事件：立即生效并展示
+        // 大盘物价事件：彻底修复 undefined 文本问题
         badge.innerText = "【大盘异动 · 全城行情】";
         badge.className = "text-xs px-2 py-0.5 rounded font-bold bg-rose-950 text-rose-300 border border-rose-800";
 
@@ -1269,7 +1378,8 @@
           item.changeNote = currentEventForDraw.note;
         }
 
-        marketResultBox.innerHTML = `📢 <strong>${currentEventForDraw.text}</strong><br>受影响商品：<b class="text-white">${item?.name}</b> · 今日市价变更为：<b class="text-amber-400">${item?.price} 文</b>`;
+        const safeMarketNotice = currentEventForDraw.text || currentEventForDraw.desc || "行情剧烈浮动！";
+        marketResultBox.innerHTML = `📢 <strong>${safeMarketNotice}</strong><br>受影响商品：<b class="text-white">${item?.name}</b> · 今日市价变更为：<b class="text-amber-400">${item?.price} 文</b>`;
         
         btn.classList.remove('hidden');
         if (curEventDrawIndex >= dailyDrawnDrawers.length - 1) {
@@ -1289,7 +1399,6 @@
       `;
     }
 
-    // 突发事件全员依次轮流提交抉择
     function handlePlayerSubmitEventChoice(pName, choice) {
       const curChoosingPlayer = personalEventSubQueue[curPersonalSubIndex];
       if (!curChoosingPlayer || curChoosingPlayer.name !== pName || !currentEventForDraw || currentEventForDraw.type !== "personal") return;
@@ -1305,12 +1414,10 @@
       checkPlayerBankruptcy(curChoosingPlayer);
 
       if (curPersonalSubIndex < personalEventSubQueue.length - 1) {
-        // 顺延至下一位玩家做选择 (B, 然后 C)
         curPersonalSubIndex++;
         updatePersonalSubProgress();
         broadcastState();
       } else {
-        // 全员都选完了！大屏幕统一揭晓全部人的结果！
         revealAllPersonalEventResults();
       }
     }
