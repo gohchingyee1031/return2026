@@ -81,6 +81,7 @@
       <p id="prologueStatusTip" class="text-xs text-stone-400"></p>
     </div>
 
+    <!-- 动态选项卡 -->
     <div id="mobilePrologueOptions" class="space-y-2.5"></div>
 
     <div id="prologueWaitingNotice" class="hidden p-6 bg-stone-900 rounded-xl border border-stone-800 text-center space-y-2">
@@ -322,6 +323,10 @@
           document.getElementById('transitionTitle').innerText = "【破晓时分】";
           document.getElementById('transitionDesc').innerText = "乞讨特权玩家正在掷骰领取施舍，稍后全员进入气运抽签...";
         }
+      } else if (state === "VICTORY") {
+        document.getElementById('viewStoryTransition').classList.remove('hidden');
+        document.getElementById('transitionTitle').innerText = "👑【时空大捷 · 达成获胜！】";
+        document.getElementById('transitionDesc').innerHTML = `有玩家已攒足 300 铜钱买下神簪！<br>请抬头观看大屏幕，等待主持人决定【继续游戏】或【终结对局】！`;
       } else if (state === "MORNING_EVENT_DRAW") {
         hasRolledDiceThisMorning = false;
         document.getElementById('viewDailyEventDraw').classList.remove('hidden');
